@@ -27,6 +27,7 @@
     --accent-fill: #C89B3C;
     --good: #2F7A4F;
     --critical: #B23B3B;
+    --total-line: #7C5CBF;
     --shadow: 0 1px 2px rgba(30, 26, 18, 0.06), 0 8px 24px rgba(30, 26, 18, 0.05);
   }
 
@@ -43,6 +44,7 @@
       --accent-fill: #D9AE4E;
       --good: #5FBE84;
       --critical: #E58080;
+      --total-line: #B79CE8;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
     }
   }
@@ -59,6 +61,7 @@
     --accent-fill: #D9AE4E;
     --good: #5FBE84;
     --critical: #E58080;
+    --total-line: #B79CE8;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
   }
 
@@ -385,6 +388,47 @@
     flex-shrink: 0;
   }
 
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 14px 14px;
+    box-shadow: var(--shadow);
+  }
+
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 10px;
+    font-size: 0.74rem;
+    color: var(--ink-2);
+  }
+
+  .chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+  .chart-legend i {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .chart-axis-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    fill: var(--ink-3);
+  }
+
+  .chart-note {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: var(--ink-3);
+    line-height: 1.4;
+  }
+
   footer {
     margin-top: 40px;
     padding-top: 16px;
@@ -472,6 +516,15 @@
     </form>
 
     <div class="holding-list" id="stockList"></div>
+  </section>
+
+  <section id="chartSection">
+    <h2 class="section-title">Birikim Grafiği</h2>
+    <div class="chart-card">
+      <div class="chart-legend" id="chartLegend"></div>
+      <div id="chartArea"></div>
+      <p class="chart-note" id="chartNote"></p>
+    </div>
   </section>
 
   <footer>
@@ -609,6 +662,7 @@
     if (list.length === 0) {
       wrap.innerHTML = '<div class="portfolio-empty">Henüz bir şey eklemedin. Aşağıdan aldığın altın veya dövizi ekleyerek kâr/zararını görebilirsin.</div>';
       summaryEl.hidden = true;
+      renderPortfolioChart();
       return;
     }
 
@@ -668,6 +722,7 @@
     pnlEl.className = "ps-pnl-value " + cls;
     pnlEl.textContent = arrow + " " + formatPrice(Math.abs(totalPnl), "TRY");
     document.getElementById("psPnlPct").textContent = " (" + (totalPct > 0 ? "+" : "") + totalPct.toFixed(1) + "%)";
+    renderPortfolioChart();
   }
 
   document.getElementById("holdType").addEventListener("change", updateFormLabels);
@@ -704,6 +759,7 @@
     if (list.length === 0) {
       wrap.innerHTML = '<div class="portfolio-empty">Henüz hisse veya fon eklemedin.</div>';
       summaryEl.hidden = true;
+      renderPortfolioChart();
       return;
     }
 
@@ -755,7 +811,7 @@
         renderStocks();
       });
     });
-    if (!anyPriced) { summaryEl.hidden = true; return; }
+    if (!anyPriced) { summaryEl.hidden = true; renderPortfolioChart(); return; }
     summaryEl.hidden = false;
     document.getElementById("stCost").textContent = formatPrice(totalCost, "TRY");
     document.getElementById("stValue").textContent = formatPrice(totalValue, "TRY");
@@ -767,6 +823,7 @@
     pnlEl.className = "ps-pnl-value " + tcls;
     pnlEl.textContent = tarrow + " " + formatPrice(Math.abs(totalPnl), "TRY");
     document.getElementById("stPnlPct").textContent = " (" + (totalPct > 0 ? "+" : "") + totalPct.toFixed(1) + "%)";
+    renderPortfolioChart();
   }
 
   document.getElementById("stockForm").addEventListener("submit", function (evt) {
@@ -784,6 +841,171 @@
     document.getElementById("stockBuyPrice").value = "";
     renderStocks();
   });
+
+  // ---- Birikim grafiği ----
+  var TR_MONTHS_SHORT = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+  function fmtChartDate(dstr) {
+    var parts = dstr.split("-");
+    var d = parseInt(parts[2], 10);
+    var m = TR_MONTHS_SHORT[parseInt(parts[1], 10) - 1];
+    return d + " " + m;
+  }
+
+  function smoothPath(pts) {
+    if (pts.length === 1) return "";
+    if (pts.length === 2) return "M" + pts[0][0] + "," + pts[0][1] + " L" + pts[1][0] + "," + pts[1][1];
+    var d = "M" + pts[0][0] + "," + pts[0][1] + " ";
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i === 0 ? i : i - 1];
+      var p1 = pts[i];
+      var p2 = pts[i + 1];
+      var p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      var cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+      var cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+      var cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += "C" + cp1x + "," + cp1y + " " + cp2x + "," + cp2y + " " + p2[0] + "," + p2[1] + " ";
+    }
+    return d;
+  }
+
+  // Bir seri (bazi noktalari null olabilir) icin, ardisik dolu nokta
+  // gruplarini ayri egriler olarak cizer (veri olmayan gunlerde bosluk birakir).
+  function seriesPaths(values, xs, ys) {
+    var segments = [];
+    var current = [];
+    for (var i = 0; i < values.length; i++) {
+      if (typeof values[i] === "number") {
+        current.push([xs[i], ys(values[i])]);
+      } else if (current.length) {
+        segments.push(current);
+        current = [];
+      }
+    }
+    if (current.length) segments.push(current);
+    return segments.map(smoothPath).join(" ");
+  }
+
+  function renderPortfolioChart() {
+    var legendEl = document.getElementById("chartLegend");
+    var areaEl = document.getElementById("chartArea");
+    var noteEl = document.getElementById("chartNote");
+    if (!legendEl || !areaEl) return;
+
+    var goldHoldings = loadHoldings();
+    var stockHoldings = loadStocks();
+    var hasGold = goldHoldings.length > 0;
+    var hasStock = stockHoldings.length > 0;
+
+    if (!hasGold && !hasStock) {
+      legendEl.innerHTML = "";
+      areaEl.innerHTML = "";
+      noteEl.textContent = "Altın veya hisse eklediğinde birikiminin zaman içindeki değişimini burada göreceksin.";
+      return;
+    }
+
+    var goldHist = DATA.history || [];
+    var stockHist = DATA.stocksHistory || [];
+    var dateSet = {};
+    goldHist.forEach(function (p) { dateSet[p.t.slice(0, 10)] = true; });
+    stockHist.forEach(function (p) { dateSet[p.t.slice(0, 10)] = true; });
+    var dates = Object.keys(dateSet).sort();
+
+    if (dates.length === 0) {
+      legendEl.innerHTML = "";
+      areaEl.innerHTML = "";
+      noteEl.textContent = "Grafik için veri henüz birikmedi, yarından itibaren burada oluşmaya başlayacak.";
+      return;
+    }
+
+    var goldByDate = {}; goldHist.forEach(function (p) { goldByDate[p.t.slice(0, 10)] = p; });
+    var stockByDate = {}; stockHist.forEach(function (p) { stockByDate[p.t.slice(0, 10)] = p; });
+
+    var lastGoldPoint = null, lastStockPoint = null;
+    var goldSeries = [], stockSeries = [], totalSeries = [];
+
+    dates.forEach(function (d) {
+      if (goldByDate[d]) lastGoldPoint = goldByDate[d];
+      if (stockByDate[d]) lastStockPoint = stockByDate[d];
+
+      var gVal = null;
+      if (hasGold && lastGoldPoint) {
+        gVal = 0;
+        goldHoldings.forEach(function (h) {
+          var t = typeInfo(h.type);
+          var price = t ? lastGoldPoint[h.type] : null;
+          if (typeof price !== "number") return;
+          if (t.currency === "USD") {
+            var usdRate = typeof lastGoldPoint.usd === "number" ? lastGoldPoint.usd : null;
+            if (usdRate) gVal += h.qty * price * usdRate;
+          } else {
+            gVal += h.qty * price;
+          }
+        });
+      }
+
+      var sVal = null;
+      if (hasStock && lastStockPoint) {
+        var any = false, sum = 0;
+        stockHoldings.forEach(function (s) {
+          var price = lastStockPoint[s.symbol];
+          if (typeof price === "number") { sum += s.qty * price; any = true; }
+        });
+        if (any) sVal = sum;
+      }
+
+      goldSeries.push(gVal);
+      stockSeries.push(sVal);
+      totalSeries.push((gVal === null && sVal === null) ? null : (gVal || 0) + (sVal || 0));
+    });
+
+    // Legend: yalnizca kullanicinin gercekten sahip oldugu kategoriler gorunur.
+    // Toplam Birikim sadece hem altin hem hisse/fon varsa ayrica anlamlidir
+    // (tek kategori varsa toplam zaten o kategoriyle ayni olur, ustuste biner).
+    var showTotal = hasGold && hasStock;
+    var legendHtml = "";
+    if (hasGold) legendHtml += '<span><i style="background:var(--accent-fill)"></i>Altın</span>';
+    if (hasStock) legendHtml += '<span><i style="background:var(--good)"></i>Hisse / Fon</span>';
+    if (showTotal) legendHtml += '<span><i style="background:var(--total-line)"></i>Toplam Birikim</span>';
+    legendEl.innerHTML = legendHtml;
+
+    if (dates.length === 1) {
+      areaEl.innerHTML = "";
+      noteEl.textContent = "Grafik bugün başladı (" + fmtChartDate(dates[0]) + "). Her gün bir nokta eklenecek, birkaç gün içinde eğri oluşacak.";
+      return;
+    }
+
+    // Olcekleme
+    var W = 600, H = 220, padL = 8, padR = 8, padT = 10, padB = 24;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var xs = dates.map(function (_, i) { return padL + (dates.length === 1 ? 0 : (i / (dates.length - 1)) * innerW); });
+
+    var allVals = [];
+    goldSeries.concat(stockSeries).concat(totalSeries).forEach(function (v) { if (typeof v === "number") allVals.push(v); });
+    var vMin = Math.min.apply(null, allVals), vMax = Math.max.apply(null, allVals);
+    if (vMin === vMax) { vMin -= 1; vMax += 1; }
+    var pad = (vMax - vMin) * 0.08;
+    vMin -= pad; vMax += pad;
+    function ys(v) { return padT + innerH - ((v - vMin) / (vMax - vMin)) * innerH; }
+
+    var svg = '<svg class="chart-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">';
+    svg += '<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) + '" stroke="var(--border)" stroke-width="1"/>';
+
+    if (hasGold) svg += '<path d="' + seriesPaths(goldSeries, xs, ys) + '" fill="none" stroke="var(--accent-fill)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (hasStock) svg += '<path d="' + seriesPaths(stockSeries, xs, ys) + '" fill="none" stroke="var(--good)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (showTotal) svg += '<path d="' + seriesPaths(totalSeries, xs, ys) + '" fill="none" stroke="var(--total-line)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+
+    // X ekseni: ilk, orta, son tarih
+    var tickIdx = dates.length > 2 ? [0, Math.floor((dates.length - 1) / 2), dates.length - 1] : [0, dates.length - 1];
+    tickIdx.forEach(function (i) {
+      var anchor = i === 0 ? "start" : (i === dates.length - 1 ? "end" : "middle");
+      svg += '<text class="chart-axis-label" x="' + xs[i] + '" y="' + (H - 6) + '" text-anchor="' + anchor + '">' + fmtChartDate(dates[i]) + '</text>';
+    });
+
+    svg += '</svg>';
+    areaEl.innerHTML = svg;
+    noteEl.textContent = dates.length + " günlük veri. Her gün için o günkü fiyatlarla, mevcut miktarların (bugün elindeki adet/gram üzerinden) o tarihteki değeri hesaplanır.";
+  }
 
   // ---- Veri yükleme ----
   function renderAll() {

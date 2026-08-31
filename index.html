@@ -1011,12 +1011,14 @@
     if (!qty || qty <= 0 || !unitCost || unitCost <= 0) return;
     var t = typeInfo(type);
     var dateVal = document.getElementById("holdDate").value || todayISO();
+    var newId = Date.now();
     var list = loadHoldings();
-    list.push({ id: Date.now(), type: type, qty: qty, unitCost: unitCost, date: dateVal });
+    list.push({ id: newId, type: type, qty: qty, unitCost: unitCost, date: dateVal });
     saveHoldings(list);
     addTx({
-      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-      ts: Date.now(),
+      id: newId + "-" + Math.random().toString(36).slice(2, 7),
+      lotId: newId,
+      ts: newId,
       date: dateVal,
       category: "gold",
       key: type,
@@ -1151,13 +1153,15 @@
     var buyPrice = parseFloat(document.getElementById("stockBuyPrice").value);
     if (!symbol || !qty || qty <= 0 || !buyPrice || buyPrice <= 0) return;
     var dateVal = document.getElementById("stockDate").value || todayISO();
-    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice, date: dateVal };
+    var newId = Date.now();
+    var entry = { id: newId, symbol: symbol, qty: qty, buyPrice: buyPrice, date: dateVal };
     var list = loadStocks();
     list.push(entry);
     saveStocks(list);
     addTx({
-      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-      ts: Date.now(),
+      id: newId + "-" + Math.random().toString(36).slice(2, 7),
+      lotId: newId,
+      ts: newId,
       date: dateVal,
       category: "stock",
       key: symbol,
@@ -1203,6 +1207,63 @@
     var list = loadTxLog();
     list.push(entry);
     saveTxLog(list);
+  }
+
+  // Bu özellik eklenmeden önce girilmiş altın/hisse kayıtlarının işlem
+  // geçmişinde karşılığı yok (o zaman henüz kaydedilmiyordu). Birikim
+  // grafiğinin geçmişi doğru göstermesi için, karşılığı olmayan her mevcut
+  // kaydı kendi "alım tarihi" ile (yoksa tarihsiz, yani "en baştan beri
+  // sahiptim" varsayımıyla) geçmişe bir kere ekliyoruz.
+  function ensureTxLogBackfilled() {
+    var log = loadTxLog();
+    var loggedLotIds = {};
+    log.forEach(function (tx) { if (tx.lotId) loggedLotIds[tx.lotId] = true; });
+    var changed = false;
+
+    loadHoldings().forEach(function (h) {
+      if (loggedLotIds[h.id]) return;
+      var t = typeInfo(h.type);
+      log.push({
+        id: "backfill-" + h.id,
+        lotId: h.id,
+        ts: h.id,
+        date: h.date || null,
+        category: "gold",
+        key: h.type,
+        label: t ? t.label : h.type,
+        unit: UNIT_LABEL[h.type],
+        action: "buy",
+        qty: h.qty,
+        price: h.unitCost,
+        currency: t ? t.currency : "TRY",
+        realizedNative: null,
+        realizedTRY: null
+      });
+      changed = true;
+    });
+
+    loadStocks().forEach(function (s) {
+      if (loggedLotIds[s.id]) return;
+      log.push({
+        id: "backfill-" + s.id,
+        lotId: s.id,
+        ts: s.id,
+        date: s.date || null,
+        category: "stock",
+        key: s.symbol,
+        label: s.symbol,
+        unit: "adet",
+        action: "buy",
+        qty: s.qty,
+        price: s.buyPrice,
+        currency: "TRY",
+        realizedNative: null,
+        realizedTRY: null
+      });
+      changed = true;
+    });
+
+    if (changed) saveTxLog(log);
   }
 
   var HISTORY_LIMIT = 12;
@@ -1526,25 +1587,52 @@
     var goldByDate = {}; goldHist.forEach(function (p) { goldByDate[p.t.slice(0, 10)] = p; });
     var stockByDate = {}; stockHist.forEach(function (p) { stockByDate[p.t.slice(0, 10)] = p; });
 
+    // Elimdeki miktarı geriye doğru sabit uygulamak yerine, o tarihte
+    // gerçekten ne kadarım olduğunu Alım-Satım Geçmişi'nden hesaplıyoruz:
+    // her alım ekler, her satım çıkarır. Tarihsiz (bu özellikten önce
+    // eklenmiş) kayıtlar "en baştan beri sahiptim" kabul edilir.
+    var txLog = loadTxLog();
+    function sortByDate(a, b) {
+      var da = a.date || "", db = b.date || "";
+      return da < db ? -1 : (da > db ? 1 : 0);
+    }
+    var goldTx = txLog.filter(function (tx) { return tx.category === "gold"; }).slice().sort(sortByDate);
+    var stockTx = txLog.filter(function (tx) { return tx.category === "stock"; }).slice().sort(sortByDate);
+
     var lastGoldPoint = null, lastStockPoint = null;
     var goldSeries = [], stockSeries = [], totalSeries = [];
+    var goldQtyByKey = {}, stockQtyByKey = {};
+    var gi = 0, si = 0;
 
     dates.forEach(function (d) {
       if (goldByDate[d]) lastGoldPoint = goldByDate[d];
       if (stockByDate[d]) lastStockPoint = stockByDate[d];
 
+      while (gi < goldTx.length && (goldTx[gi].date || "") <= d) {
+        var gtx = goldTx[gi];
+        goldQtyByKey[gtx.key] = (goldQtyByKey[gtx.key] || 0) + (gtx.action === "sell" ? -gtx.qty : gtx.qty);
+        gi++;
+      }
+      while (si < stockTx.length && (stockTx[si].date || "") <= d) {
+        var stx = stockTx[si];
+        stockQtyByKey[stx.key] = (stockQtyByKey[stx.key] || 0) + (stx.action === "sell" ? -stx.qty : stx.qty);
+        si++;
+      }
+
       var gVal = null;
       if (hasGold && lastGoldPoint) {
         gVal = 0;
-        goldHoldings.forEach(function (h) {
-          var t = typeInfo(h.type);
-          var price = t ? lastGoldPoint[h.type] : null;
+        Object.keys(goldQtyByKey).forEach(function (key) {
+          var qty = goldQtyByKey[key];
+          if (!qty) return;
+          var t = typeInfo(key);
+          var price = t ? lastGoldPoint[key] : null;
           if (typeof price !== "number") return;
           if (t.currency === "USD") {
             var usdRate = typeof lastGoldPoint.usd === "number" ? lastGoldPoint.usd : null;
-            if (usdRate) gVal += h.qty * price * usdRate;
+            if (usdRate) gVal += qty * price * usdRate;
           } else {
-            gVal += h.qty * price;
+            gVal += qty * price;
           }
         });
       }
@@ -1552,9 +1640,11 @@
       var sVal = null;
       if (hasStock && lastStockPoint) {
         var any = false, sum = 0;
-        stockHoldings.forEach(function (s) {
-          var price = lastStockPoint[s.symbol];
-          if (typeof price === "number") { sum += s.qty * price; any = true; }
+        Object.keys(stockQtyByKey).forEach(function (symbol) {
+          var qty = stockQtyByKey[symbol];
+          if (!qty) return;
+          var price = lastStockPoint[symbol];
+          if (typeof price === "number") { sum += qty * price; any = true; }
         });
         if (any) sVal = sum;
       }
@@ -1564,22 +1654,23 @@
       totalSeries.push((gVal === null && sVal === null) ? null : (gVal || 0) + (sVal || 0));
     });
 
-    // "Aynı parayı mevduata yatırsaydım" karşılaştırması: toplam maliyet
-    // (gerçekten ödenen TL) ilk günden itibaren varsayılan net faizle
-    // günlük bileşik olarak büyütülür.
-    var goldCostTRY = 0;
-    goldHoldings.forEach(function (h) {
-      var c = toTRY(h.type, h.qty * h.unitCost);
-      if (typeof c === "number") goldCostTRY += c;
-    });
-    var stockCostTRY = 0;
-    stockHoldings.forEach(function (s) { stockCostTRY += s.qty * s.buyPrice; });
-    var depositPrincipal = goldCostTRY + stockCostTRY;
-    var hasDeposit = depositPrincipal > 0;
+    // "Aynı parayı mevduata yatırsaydım" / enflasyon karşılaştırması: her
+    // alım kendi tarihinden itibaren büyümeye başlar (satışlar bu anaparadan
+    // düşülmez; o tutarın mevduatta kalmaya devam ettiği varsayılır).
+    var contributions = txLog.filter(function (tx) { return tx.action === "buy"; }).map(function (tx) {
+      var amountTRY = toTRY(tx.key, tx.qty * tx.price);
+      return { date: tx.date || dates[0], amount: typeof amountTRY === "number" ? amountTRY : 0 };
+    }).filter(function (c) { return c.amount > 0; });
+    var hasDeposit = contributions.length > 0;
     var depositSeries = dates.map(function (d) {
       if (!hasDeposit) return null;
-      var days = daysBetween(dates[0], d);
-      return depositPrincipal * Math.pow(1 + DEPOSIT_ANNUAL_RATE_NET, days / 365);
+      var total = 0;
+      contributions.forEach(function (c) {
+        if (c.date > d) return;
+        var days = daysBetween(c.date, d);
+        total += c.amount * Math.pow(1 + DEPOSIT_ANNUAL_RATE_NET, days / 365);
+      });
+      return total;
     });
 
     // "Enflasyona yenildim mi" karsilastirmasi: ayni tutar sadece enflasyon
@@ -1587,8 +1678,13 @@
     // kategori) bu cizginin ustundeyse alim gucu korunmus demektir.
     var inflationSeries = dates.map(function (d) {
       if (!hasDeposit) return null;
-      var days = daysBetween(dates[0], d);
-      return depositPrincipal * Math.pow(1 + INFLATION_ANNUAL_RATE, days / 365);
+      var total = 0;
+      contributions.forEach(function (c) {
+        if (c.date > d) return;
+        var days = daysBetween(c.date, d);
+        total += c.amount * Math.pow(1 + INFLATION_ANNUAL_RATE, days / 365);
+      });
+      return total;
     });
 
     // Legend: yalnizca kullanicinin gercekten sahip oldugu kategoriler gorunur,
@@ -1671,7 +1767,7 @@
 
     svg += '</svg>';
     areaEl.innerHTML = svg;
-    var noteText = dates.length + " günlük veri. Her gün için o günkü fiyatlarla, mevcut miktarların (bugün elindeki adet/gram üzerinden) o tarihteki değeri hesaplanır.";
+    var noteText = dates.length + " günlük veri. Her gün için, o tarihte gerçekten elinde ne kadar vardıysa (Alım-Satım Geçmişi'ndeki tarihlere göre) o günkü fiyatla değeri hesaplanır.";
     if (hasDeposit) {
       noteText += " Mevduat çizgisi, ödediğin toplam tutarı TCMB'nin açıkladığı ortalama TL mevduat faiziyle (yaklaşık %" +
         (DEPOSIT_ANNUAL_RATE_NET * 100).toFixed(1).replace(".", ",") +
@@ -1723,6 +1819,7 @@
   populateHoldTypeSelect();
   document.getElementById("holdDate").value = todayISO();
   document.getElementById("stockDate").value = todayISO();
+  ensureTxLogBackfilled();
   loadData();
   setInterval(loadData, 60 * 1000);
 

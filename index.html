@@ -468,11 +468,11 @@
         <div><label class="field-label" for="stockBuyPrice">Alış fiyatı (₺)</label><input type="number" id="stockBuyPrice" step="any" min="0" placeholder="45,20" required></div>
       </div>
       <div>
-        <label class="field-label" for="stockCurrentPrice">Güncel fiyat (₺) — otomatik takip ediliyorsa boş bırakabilirsin</label>
-        <input type="number" id="stockCurrentPrice" step="any" min="0" placeholder="48,60">
+        <label class="field-label" for="stockCurrentPrice">Güncel fiyat (₺)</label>
+        <input type="number" id="stockCurrentPrice" step="any" min="0" placeholder="48,60" required>
       </div>
       <button class="btn-primary" type="submit">Portföye Ekle</button>
-      <p class="form-note">fetch_prices.py içindeki BIST_SYMBOLS / FON_KODLARI listesinde olan semboller otomatik güncellenir (yeşil "otomatik" etiketiyle görünür). Listede olmayan semboller için güncel fiyatı elle giriyorsun; satırdaki "fiyatı güncelle" ile tazeleyebilirsin.</p>
+      <p class="form-note">Girdiğin güncel fiyatla kâr/zararını hemen görürsün; satırdaki "fiyatı güncelle" ile sonra tazeleyebilirsin. fetch_prices.py içindeki BIST_SYMBOLS / FON_KODLARI listesine eklenen semboller ileride otomatik güncellenir (yeşil "otomatik" etiketiyle görünür) ve elle girdiğin fiyatın yerini alır.</p>
     </form>
 
     <div class="holding-list" id="stockList"></div>
@@ -817,9 +817,8 @@
     var qty = parseFloat(document.getElementById("stockQty").value);
     var buyPrice = parseFloat(document.getElementById("stockBuyPrice").value);
     var manualPrice = parseFloat(document.getElementById("stockCurrentPrice").value);
-    if (!symbol || !qty || qty <= 0 || !buyPrice || buyPrice <= 0) return;
-    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice };
-    if (manualPrice && manualPrice > 0) entry.manualPrice = manualPrice;
+    if (!symbol || !qty || qty <= 0 || !buyPrice || buyPrice <= 0 || !manualPrice || manualPrice <= 0) return;
+    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice, manualPrice: manualPrice };
     var list = loadStocks();
     list.push(entry);
     saveStocks(list);

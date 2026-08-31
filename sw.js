@@ -1,4 +1,4 @@
-const CACHE_NAME = "savings-stocks-v2";
+const CACHE_NAME = "savings-stocks-v3";
 const CORE_ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -35,17 +35,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Diğer statik dosyalar: önbellek öncelikli, arka planda tazele.
+  // Diğer statik dosyalar (index.html, manifest.json, icon.svg vb.):
+  // önce ağdan taze sürümü dene, olmazsa (offline ise) önbelleğe düş.
+  // Böylece yeni bir kod değişikliği yayınlandığında kullanıcı bir sonraki
+  // açılışta hemen güncel sürümü görür; eski "önbellek öncelikli" strateji
+  // yeni özelliklerin görünmesini bir uygulama daha geciktiriyordu.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((res) => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

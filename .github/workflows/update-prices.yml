@@ -2,8 +2,8 @@ name: Fiyatları Güncelle
 
 on:
   schedule:
-    # Her 15 dakikada bir (GitHub'ın kendi yoğunluğuna göre birkaç dakika gecikebilir)
-    - cron: "*/15 * * * *"
+    # Her 5 dakikada bir (GitHub'ın izin verdigi pratik alt sinir; yogunluga gore birkac dakika gecikebilir)
+    - cron: "*/5 * * * *"
   workflow_dispatch: {}   # Actions sekmesinden elle de tetiklenebilir
   push:
     branches: [main]

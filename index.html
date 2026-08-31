@@ -467,12 +467,8 @@
         <div><label class="field-label" for="stockQty">Miktar (adet)</label><input type="number" id="stockQty" step="any" min="0" placeholder="100" required></div>
         <div><label class="field-label" for="stockBuyPrice">Alış fiyatı (₺)</label><input type="number" id="stockBuyPrice" step="any" min="0" placeholder="45,20" required></div>
       </div>
-      <div>
-        <label class="field-label" for="stockCurrentPrice">Güncel fiyat (₺)</label>
-        <input type="number" id="stockCurrentPrice" step="any" min="0" placeholder="48,60" required>
-      </div>
       <button class="btn-primary" type="submit">Portföye Ekle</button>
-      <p class="form-note">Girdiğin güncel fiyatla kâr/zararını hemen görürsün; satırdaki "fiyatı güncelle" ile sonra tazeleyebilirsin. fetch_prices.py içindeki BIST_SYMBOLS / FON_KODLARI listesine eklenen semboller ileride otomatik güncellenir (yeşil "otomatik" etiketiyle görünür) ve elle girdiğin fiyatın yerini alır.</p>
+      <p class="form-note">Fiyat çekilen semboller için ekler eklemez kâr/zararını görürsün, tıpkı altında olduğu gibi. Yeni bir sembol takip listesine eklenmesi gerekiyorsa (fetch_prices.py), o sembolü ekleyip söylersen listeye ekleyip birkaç dakika içinde otomatik akmasını sağlarım.</p>
     </form>
 
     <div class="holding-list" id="stockList"></div>
@@ -691,7 +687,6 @@
 
   // ---- Hisse / Fon portföyü ----
   var STOCK_KEY = "stockPortfolio";
-  var editingStockId = null;
   function loadStocks() { try { return JSON.parse(localStorage.getItem(STOCK_KEY) || "[]"); } catch (e) { return []; } }
   function saveStocks(list) { try { localStorage.setItem(STOCK_KEY, JSON.stringify(list)); } catch (e) {} }
 
@@ -716,9 +711,8 @@
 
     list.forEach(function (s) {
       var auto = autoPrice(s.symbol);
-      var current = auto !== null ? auto : (typeof s.manualPrice === "number" ? s.manualPrice : null);
       var costTotal = s.qty * s.buyPrice;
-      var valueTotal = current !== null ? s.qty * current : null;
+      var valueTotal = auto !== null ? s.qty * auto : null;
       var pnl = valueTotal !== null ? valueTotal - costTotal : null;
       var pnlPct = (valueTotal !== null && costTotal > 0) ? (pnl / costTotal) * 100 : null;
       if (valueTotal !== null) { totalCost += costTotal; totalValue += valueTotal; anyPriced = true; }
@@ -738,16 +732,8 @@
       var priceLineHtml;
       if (auto !== null) {
         priceLineHtml = '<div class="holding-detail">' + s.qty + ' adet · maliyet ' + formatPrice(s.buyPrice, "TRY") + '/birim · güncel ' + formatPrice(auto, "TRY") + '/birim</div>';
-      } else if (editingStockId === s.id) {
-        priceLineHtml =
-          '<div class="price-edit-row">' +
-            '<input type="number" step="any" min="0" id="editPrice-' + s.id + '" value="' + (s.manualPrice || "") + '">' +
-            '<button type="button" class="price-save" data-id="' + s.id + '">Kaydet</button>' +
-          '</div>';
       } else {
-        priceLineHtml =
-          '<div class="holding-detail">' + s.qty + ' adet · maliyet ' + formatPrice(s.buyPrice, "TRY") + '/birim · güncel ' + formatPrice(current, "TRY") + '/birim ' +
-          '<button type="button" class="price-edit-btn" data-id="' + s.id + '">fiyatı güncelle</button></div>';
+        priceLineHtml = '<div class="holding-detail">' + s.qty + ' adet · maliyet ' + formatPrice(s.buyPrice, "TRY") + '/birim · güncel fiyat henüz takip listesinde değil</div>';
       }
 
       row.innerHTML =
@@ -769,34 +755,6 @@
         renderStocks();
       });
     });
-    wrap.querySelectorAll(".price-edit-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        editingStockId = parseInt(btn.getAttribute("data-id"), 10);
-        renderStocks();
-        var input = document.getElementById("editPrice-" + editingStockId);
-        if (input) { input.focus(); input.select(); }
-      });
-    });
-    wrap.querySelectorAll(".price-save").forEach(function (btn) {
-      var save = function () {
-        var id = btn.getAttribute("data-id");
-        var input = document.getElementById("editPrice-" + id);
-        var val = parseFloat(input.value);
-        if (val && val > 0) {
-          var updated = loadStocks().map(function (s) {
-            if (String(s.id) === id) s.manualPrice = val;
-            return s;
-          });
-          saveStocks(updated);
-        }
-        editingStockId = null;
-        renderStocks();
-      };
-      btn.addEventListener("click", save);
-      var input = document.getElementById("editPrice-" + btn.getAttribute("data-id"));
-      if (input) input.addEventListener("keydown", function (evt) { if (evt.key === "Enter") { evt.preventDefault(); save(); } });
-    });
-
     if (!anyPriced) { summaryEl.hidden = true; return; }
     summaryEl.hidden = false;
     document.getElementById("stCost").textContent = formatPrice(totalCost, "TRY");
@@ -816,16 +774,14 @@
     var symbol = document.getElementById("stockSymbol").value.trim().toUpperCase();
     var qty = parseFloat(document.getElementById("stockQty").value);
     var buyPrice = parseFloat(document.getElementById("stockBuyPrice").value);
-    var manualPrice = parseFloat(document.getElementById("stockCurrentPrice").value);
-    if (!symbol || !qty || qty <= 0 || !buyPrice || buyPrice <= 0 || !manualPrice || manualPrice <= 0) return;
-    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice, manualPrice: manualPrice };
+    if (!symbol || !qty || qty <= 0 || !buyPrice || buyPrice <= 0) return;
+    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice };
     var list = loadStocks();
     list.push(entry);
     saveStocks(list);
     document.getElementById("stockSymbol").value = "";
     document.getElementById("stockQty").value = "";
     document.getElementById("stockBuyPrice").value = "";
-    document.getElementById("stockCurrentPrice").value = "";
     renderStocks();
   });
 

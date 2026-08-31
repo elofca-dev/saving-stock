@@ -402,19 +402,36 @@
   .chart-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 8px;
     margin-bottom: 10px;
     font-size: 0.74rem;
-    color: var(--ink-2);
   }
 
-  .chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .chart-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 11px 5px 8px;
+    color: var(--ink-2);
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-size: 0.74rem;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
 
-  .chart-legend i {
+  .chart-toggle:focus-visible { outline: 2px solid var(--accent-fill); outline-offset: 1px; }
+
+  .chart-toggle.off { opacity: 0.42; }
+
+  .chart-toggle i {
     width: 10px;
     height: 10px;
     border-radius: 3px;
     display: inline-block;
+    flex-shrink: 0;
   }
 
   .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
@@ -860,6 +877,10 @@
   // kadar en guncel resmi rakam budur; her ay elden guncellenmesi gerekir.
   var INFLATION_ANNUAL_RATE = 0.3175;
 
+  var CHART_VIS_KEY = "chartLineVisibility";
+  function loadChartVis() { try { return JSON.parse(localStorage.getItem(CHART_VIS_KEY) || "{}"); } catch (e) { return {}; } }
+  function saveChartVis(v) { try { localStorage.setItem(CHART_VIS_KEY, JSON.stringify(v)); } catch (e) {} }
+
   function daysBetween(dateA, dateB) {
     var a = new Date(dateA + "T00:00:00Z").getTime();
     var b = new Date(dateB + "T00:00:00Z").getTime();
@@ -1009,17 +1030,34 @@
       return depositPrincipal * Math.pow(1 + INFLATION_ANNUAL_RATE, days / 365);
     });
 
-    // Legend: yalnizca kullanicinin gercekten sahip oldugu kategoriler gorunur.
+    // Legend: yalnizca kullanicinin gercekten sahip oldugu kategoriler gorunur,
+    // dokununca acilir/kapanir (secim localStorage'da saklanir).
     // Toplam Birikim sadece hem altin hem hisse/fon varsa ayrica anlamlidir
     // (tek kategori varsa toplam zaten o kategoriyle ayni olur, ustuste biner).
     var showTotal = hasGold && hasStock;
-    var legendHtml = "";
-    if (hasGold) legendHtml += '<span><i style="background:var(--accent-fill)"></i>Altın</span>';
-    if (hasStock) legendHtml += '<span><i style="background:var(--good)"></i>Hisse / Fon</span>';
-    if (showTotal) legendHtml += '<span><i style="background:var(--total-line)"></i>Toplam Birikim</span>';
-    if (hasDeposit) legendHtml += '<span><i style="background:var(--deposit-line)"></i>Mevduat (yaklaşık)</span>';
-    if (hasDeposit) legendHtml += '<span><i style="background:var(--critical)"></i>Enflasyon (yaklaşık)</span>';
-    legendEl.innerHTML = legendHtml;
+    var vis = loadChartVis();
+    var isOn = function (key) { return vis[key] !== false; };
+
+    var lines = [];
+    if (hasGold) lines.push({ key: "gold", label: "Altın", color: "var(--accent-fill)" });
+    if (hasStock) lines.push({ key: "stock", label: "Hisse / Fon", color: "var(--good)" });
+    if (showTotal) lines.push({ key: "total", label: "Toplam Birikim", color: "var(--total-line)" });
+    if (hasDeposit) lines.push({ key: "deposit", label: "Mevduat (yaklaşık)", color: "var(--deposit-line)" });
+    if (hasDeposit) lines.push({ key: "inflation", label: "Enflasyon (yaklaşık)", color: "var(--critical)" });
+
+    legendEl.innerHTML = lines.map(function (l) {
+      return '<button type="button" class="chart-toggle' + (isOn(l.key) ? "" : " off") + '" data-key="' + l.key + '">' +
+        '<i style="background:' + l.color + '"></i>' + l.label + '</button>';
+    }).join("");
+    legendEl.querySelectorAll(".chart-toggle").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var key = btn.getAttribute("data-key");
+        var v = loadChartVis();
+        v[key] = !isOn(key);
+        saveChartVis(v);
+        renderPortfolioChart();
+      });
+    });
 
     if (dates.length === 1) {
       areaEl.innerHTML = "";
@@ -1032,8 +1070,22 @@
     var innerW = W - padL - padR, innerH = H - padT - padB;
     var xs = dates.map(function (_, i) { return padL + (dates.length === 1 ? 0 : (i / (dates.length - 1)) * innerW); });
 
+    var showGold = hasGold && isOn("gold");
+    var showStock = hasStock && isOn("stock");
+    var showTotalLine = showTotal && isOn("total");
+    var showDeposit = hasDeposit && isOn("deposit");
+    var showInflation = hasDeposit && isOn("inflation");
+
     var allVals = [];
-    goldSeries.concat(stockSeries).concat(totalSeries).concat(depositSeries).concat(inflationSeries).forEach(function (v) { if (typeof v === "number") allVals.push(v); });
+    [showGold && goldSeries, showStock && stockSeries, showTotalLine && totalSeries, showDeposit && depositSeries, showInflation && inflationSeries]
+      .forEach(function (s) { if (s) s.forEach(function (v) { if (typeof v === "number") allVals.push(v); }); });
+
+    if (allVals.length === 0) {
+      areaEl.innerHTML = "";
+      noteEl.textContent = "Tüm çizgiler kapalı — üstteki etiketlere dokunarak görmek istediklerini aç.";
+      return;
+    }
+
     var vMin = Math.min.apply(null, allVals), vMax = Math.max.apply(null, allVals);
     if (vMin === vMax) { vMin -= 1; vMax += 1; }
     var pad = (vMax - vMin) * 0.08;
@@ -1043,11 +1095,11 @@
     var svg = '<svg class="chart-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">';
     svg += '<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) + '" stroke="var(--border)" stroke-width="1"/>';
 
-    if (hasGold) svg += '<path d="' + seriesPaths(goldSeries, xs, ys) + '" fill="none" stroke="var(--accent-fill)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-    if (hasStock) svg += '<path d="' + seriesPaths(stockSeries, xs, ys) + '" fill="none" stroke="var(--good)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-    if (showTotal) svg += '<path d="' + seriesPaths(totalSeries, xs, ys) + '" fill="none" stroke="var(--total-line)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
-    if (hasDeposit) svg += '<path d="' + seriesPaths(depositSeries, xs, ys) + '" fill="none" stroke="var(--deposit-line)" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round"/>';
-    if (hasDeposit) svg += '<path d="' + seriesPaths(inflationSeries, xs, ys) + '" fill="none" stroke="var(--critical)" stroke-width="2" stroke-dasharray="1.5 4" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (showGold) svg += '<path d="' + seriesPaths(goldSeries, xs, ys) + '" fill="none" stroke="var(--accent-fill)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (showStock) svg += '<path d="' + seriesPaths(stockSeries, xs, ys) + '" fill="none" stroke="var(--good)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (showTotalLine) svg += '<path d="' + seriesPaths(totalSeries, xs, ys) + '" fill="none" stroke="var(--total-line)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (showDeposit) svg += '<path d="' + seriesPaths(depositSeries, xs, ys) + '" fill="none" stroke="var(--deposit-line)" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (showInflation) svg += '<path d="' + seriesPaths(inflationSeries, xs, ys) + '" fill="none" stroke="var(--critical)" stroke-width="2" stroke-dasharray="1.5 4" stroke-linecap="round" stroke-linejoin="round"/>';
 
     // X ekseni: ilk, orta, son tarih
     var tickIdx = dates.length > 2 ? [0, Math.floor((dates.length - 1) / 2), dates.length - 1] : [0, dates.length - 1];

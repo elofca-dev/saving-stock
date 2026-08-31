@@ -962,7 +962,9 @@
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-id");
         saveHoldings(loadHoldings().filter(function (h) { return String(h.id) !== id; }));
+        removeTxByLotId(id);
         renderPortfolio();
+        renderTxHistory();
       });
     });
     wrap.querySelectorAll(".sell-btn").forEach(function (btn) {
@@ -1108,7 +1110,9 @@
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-id");
         saveStocks(loadStocks().filter(function (s) { return String(s.id) !== id; }));
+        removeTxByLotId(id);
         renderStocks();
+        renderTxHistory();
       });
     });
     wrap.querySelectorAll(".sell-btn").forEach(function (btn) {
@@ -1207,6 +1211,12 @@
     var list = loadTxLog();
     list.push(entry);
     saveTxLog(list);
+  }
+  // "×" ile bir kaydı tamamen silmek "bunu hiç eklememiştim" demektir; o
+  // kaydın alım geçmişindeki izini de (varsa) siliyoruz, yoksa Birikim
+  // Grafiği o miktarı hâlâ elindeymiş gibi saymaya devam eder.
+  function removeTxByLotId(lotId) {
+    saveTxLog(loadTxLog().filter(function (tx) { return String(tx.lotId) !== String(lotId); }));
   }
 
   // Bu özellik eklenmeden önce girilmiş altın/hisse kayıtlarının işlem

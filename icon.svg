@@ -2,5 +2,5 @@
 <rect width="192" height="192" rx="40" fill="#14120E"/>
 <circle cx="96" cy="96" r="62" fill="none" stroke="#D9AE4E" stroke-width="8"/>
 <circle cx="96" cy="96" r="44" fill="none" stroke="#D9AE4E" stroke-width="3" opacity="0.55"/>
-<text x="96" y="112" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-weight="600" fill="#D9AE4E" text-anchor="middle">A</text>
+<text x="96" y="114" font-family="-apple-system, 'SF Pro Text', system-ui, Arial, sans-serif" font-size="58" font-weight="700" fill="#D9AE4E" text-anchor="middle">&#8378;</text>
 </svg>

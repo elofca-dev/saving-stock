@@ -28,6 +28,7 @@
     --good: #2F7A4F;
     --critical: #B23B3B;
     --total-line: #7C5CBF;
+    --deposit-line: #3B7DB2;
     --shadow: 0 1px 2px rgba(30, 26, 18, 0.06), 0 8px 24px rgba(30, 26, 18, 0.05);
   }
 
@@ -45,6 +46,7 @@
       --good: #5FBE84;
       --critical: #E58080;
       --total-line: #B79CE8;
+      --deposit-line: #6FB3E0;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
     }
   }
@@ -62,6 +64,7 @@
     --good: #5FBE84;
     --critical: #E58080;
     --total-line: #B79CE8;
+    --deposit-line: #6FB3E0;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
   }
 
@@ -843,6 +846,26 @@
   });
 
   // ---- Birikim grafiği ----
+  // TL mevduat karsilastirmasi: TCMB'nin acikladigi 3 aya kadar vadeli TL
+  // mevduata bankalarca fiilen uygulanan agirlikli ortalama faiz (21 Agustos
+  // 2026 haftasi, brut %47,40) uzerinden, 6 aydan kisa vadede gecerli %17,5
+  // stopaj dusulerek net orana cevrilir. Gercek oran bankaya, vadeye ve
+  // tutara gore degisir; bu sadece kaba bir karsilastirma icindir.
+  var DEPOSIT_ANNUAL_RATE_GROSS = 47.40;
+  var DEPOSIT_STOPAJ_PCT = 17.5;
+  var DEPOSIT_ANNUAL_RATE_NET = (DEPOSIT_ANNUAL_RATE_GROSS / 100) * (1 - DEPOSIT_STOPAJ_PCT / 100);
+
+  // Enflasyon karsilastirmasi: TÜİK'in en son acikladigi yillik TÜFE
+  // (Temmuz 2026, %31,75). Agustos verisi eylul basinda aciklanir, o ana
+  // kadar en guncel resmi rakam budur; her ay elden guncellenmesi gerekir.
+  var INFLATION_ANNUAL_RATE = 0.3175;
+
+  function daysBetween(dateA, dateB) {
+    var a = new Date(dateA + "T00:00:00Z").getTime();
+    var b = new Date(dateB + "T00:00:00Z").getTime();
+    return Math.round((b - a) / 86400000);
+  }
+
   var TR_MONTHS_SHORT = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
   function fmtChartDate(dstr) {
     var parts = dstr.split("-");
@@ -959,6 +982,33 @@
       totalSeries.push((gVal === null && sVal === null) ? null : (gVal || 0) + (sVal || 0));
     });
 
+    // "Aynı parayı mevduata yatırsaydım" karşılaştırması: toplam maliyet
+    // (gerçekten ödenen TL) ilk günden itibaren varsayılan net faizle
+    // günlük bileşik olarak büyütülür.
+    var goldCostTRY = 0;
+    goldHoldings.forEach(function (h) {
+      var c = toTRY(h.type, h.qty * h.unitCost);
+      if (typeof c === "number") goldCostTRY += c;
+    });
+    var stockCostTRY = 0;
+    stockHoldings.forEach(function (s) { stockCostTRY += s.qty * s.buyPrice; });
+    var depositPrincipal = goldCostTRY + stockCostTRY;
+    var hasDeposit = depositPrincipal > 0;
+    var depositSeries = dates.map(function (d) {
+      if (!hasDeposit) return null;
+      var days = daysBetween(dates[0], d);
+      return depositPrincipal * Math.pow(1 + DEPOSIT_ANNUAL_RATE_NET, days / 365);
+    });
+
+    // "Enflasyona yenildim mi" karsilastirmasi: ayni tutar sadece enflasyon
+    // kadar buyuseydi ne olurdu. Toplam Birikim (ya da tek kategori varsa o
+    // kategori) bu cizginin ustundeyse alim gucu korunmus demektir.
+    var inflationSeries = dates.map(function (d) {
+      if (!hasDeposit) return null;
+      var days = daysBetween(dates[0], d);
+      return depositPrincipal * Math.pow(1 + INFLATION_ANNUAL_RATE, days / 365);
+    });
+
     // Legend: yalnizca kullanicinin gercekten sahip oldugu kategoriler gorunur.
     // Toplam Birikim sadece hem altin hem hisse/fon varsa ayrica anlamlidir
     // (tek kategori varsa toplam zaten o kategoriyle ayni olur, ustuste biner).
@@ -967,6 +1017,8 @@
     if (hasGold) legendHtml += '<span><i style="background:var(--accent-fill)"></i>Altın</span>';
     if (hasStock) legendHtml += '<span><i style="background:var(--good)"></i>Hisse / Fon</span>';
     if (showTotal) legendHtml += '<span><i style="background:var(--total-line)"></i>Toplam Birikim</span>';
+    if (hasDeposit) legendHtml += '<span><i style="background:var(--deposit-line)"></i>Mevduat (yaklaşık)</span>';
+    if (hasDeposit) legendHtml += '<span><i style="background:var(--critical)"></i>Enflasyon (yaklaşık)</span>';
     legendEl.innerHTML = legendHtml;
 
     if (dates.length === 1) {
@@ -981,7 +1033,7 @@
     var xs = dates.map(function (_, i) { return padL + (dates.length === 1 ? 0 : (i / (dates.length - 1)) * innerW); });
 
     var allVals = [];
-    goldSeries.concat(stockSeries).concat(totalSeries).forEach(function (v) { if (typeof v === "number") allVals.push(v); });
+    goldSeries.concat(stockSeries).concat(totalSeries).concat(depositSeries).concat(inflationSeries).forEach(function (v) { if (typeof v === "number") allVals.push(v); });
     var vMin = Math.min.apply(null, allVals), vMax = Math.max.apply(null, allVals);
     if (vMin === vMax) { vMin -= 1; vMax += 1; }
     var pad = (vMax - vMin) * 0.08;
@@ -994,6 +1046,8 @@
     if (hasGold) svg += '<path d="' + seriesPaths(goldSeries, xs, ys) + '" fill="none" stroke="var(--accent-fill)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
     if (hasStock) svg += '<path d="' + seriesPaths(stockSeries, xs, ys) + '" fill="none" stroke="var(--good)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
     if (showTotal) svg += '<path d="' + seriesPaths(totalSeries, xs, ys) + '" fill="none" stroke="var(--total-line)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (hasDeposit) svg += '<path d="' + seriesPaths(depositSeries, xs, ys) + '" fill="none" stroke="var(--deposit-line)" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (hasDeposit) svg += '<path d="' + seriesPaths(inflationSeries, xs, ys) + '" fill="none" stroke="var(--critical)" stroke-width="2" stroke-dasharray="1.5 4" stroke-linecap="round" stroke-linejoin="round"/>';
 
     // X ekseni: ilk, orta, son tarih
     var tickIdx = dates.length > 2 ? [0, Math.floor((dates.length - 1) / 2), dates.length - 1] : [0, dates.length - 1];
@@ -1004,7 +1058,29 @@
 
     svg += '</svg>';
     areaEl.innerHTML = svg;
-    noteEl.textContent = dates.length + " günlük veri. Her gün için o günkü fiyatlarla, mevcut miktarların (bugün elindeki adet/gram üzerinden) o tarihteki değeri hesaplanır.";
+    var noteText = dates.length + " günlük veri. Her gün için o günkü fiyatlarla, mevcut miktarların (bugün elindeki adet/gram üzerinden) o tarihteki değeri hesaplanır.";
+    if (hasDeposit) {
+      noteText += " Mevduat çizgisi, ödediğin toplam tutarı TCMB'nin açıkladığı ortalama TL mevduat faiziyle (yaklaşık %" +
+        (DEPOSIT_ANNUAL_RATE_NET * 100).toFixed(1).replace(".", ",") +
+        " net yıllık, stopaj düşülmüş) günlük bileşik olarak büyütür. Enflasyon çizgisi ise aynı tutarı TÜİK'in en son açıkladığı yıllık TÜFE ile (Temmuz 2026, %" +
+        (INFLATION_ANNUAL_RATE * 100).toFixed(2).replace(".", ",") +
+        ") büyütür — ikisi de kaba birer karşılaştırmadır, yatırım tavsiyesi değildir.";
+
+      var refSeries = showTotal ? totalSeries : (hasGold ? goldSeries : stockSeries);
+      var lastActual = null, lastInfl = null;
+      for (var ri = refSeries.length - 1; ri >= 0; ri--) {
+        if (typeof refSeries[ri] === "number" && typeof inflationSeries[ri] === "number") {
+          lastActual = refSeries[ri]; lastInfl = inflationSeries[ri]; break;
+        }
+      }
+      if (lastActual !== null && lastInfl !== null && lastInfl > 0) {
+        var diffPct = ((lastActual - lastInfl) / lastInfl) * 100;
+        noteText += diffPct >= 0
+          ? " Bugün itibarıyla birikimin enflasyonun %" + diffPct.toFixed(1).replace(".", ",") + " üstünde — alım gücün korunmuş."
+          : " Bugün itibarıyla birikimin enflasyonun %" + Math.abs(diffPct).toFixed(1).replace(".", ",") + " altında — alım gücün erimiş.";
+      }
+    }
+    noteEl.textContent = noteText;
   }
 
   // ---- Veri yükleme ----

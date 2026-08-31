@@ -63,10 +63,14 @@ def http_get_json(url, timeout=15):
 
 
 def parse_tl_number(raw):
-    """'6.909,39' gibi TR bicimli sayilari float'a cevirir."""
+    """'6.909,39' gibi TR bicimli sayilari, '$4,442.72' gibi dolar bicimli
+    sayilari da float'a cevirir (Truncgil'in Ons alani dolar formatinda gelir)."""
     if isinstance(raw, (int, float)):
         return float(raw)
-    s = str(raw).strip().replace(".", "").replace(",", ".")
+    s = str(raw).strip()
+    if s.startswith("$"):
+        return float(s[1:].replace(",", ""))
+    s = s.replace(".", "").replace(",", ".")
     return float(s)
 
 
@@ -110,16 +114,33 @@ def fetch_from_truncgil():
     }, "truncgil"
 
 
+def yf_last_price(symbols):
+    """Verilen sembol listesini sirayla dener, ilk basarili son fiyati dondurur.
+    Yahoo Finance bazi sembolleri (ornegin XAUUSD=X) zaman zaman 404
+    dondurebiliyor; bu yuzden alternatif sembollerle yedekleme yapilir."""
+    import yfinance as yf
+
+    last_err = None
+    for sym in symbols:
+        try:
+            price = yf.Ticker(sym).fast_info["last_price"]
+            if price:
+                return float(price)
+        except Exception as e:
+            last_err = e
+            continue
+    raise RuntimeError(f"{symbols} icin fiyat alinamadi: {last_err}")
+
+
 def fetch_from_yfinance_fallback():
     """Truncgil basarisiz olursa yfinance ile yaklasik degerler uretir.
     Ceyrek/yarim/tam/cumhuriyet icin standart agirlik carpanlari kullanilir;
     bu piyasa fiyatlarindaki iscilik primini yansitmaz, sadece yaklasik bir
     tahmindir."""
-    import yfinance as yf
-
-    usdtry = yf.Ticker("USDTRY=X").fast_info["last_price"]
-    eurtry = yf.Ticker("EURTRY=X").fast_info["last_price"]
-    xauusd = yf.Ticker("XAUUSD=X").fast_info["last_price"]
+    usdtry = yf_last_price(["USDTRY=X"])
+    eurtry = yf_last_price(["EURTRY=X"])
+    # XAUUSD=X bazen 404 donuyor; GC=F (COMEX altin vadeli islem) yedek olarak kullanilir.
+    xauusd = yf_last_price(["XAUUSD=X", "GC=F"])
 
     gram_try = (xauusd / 31.1034768) * usdtry
     # Yaklasik agirlik katsayilari (has altin bazinda kaba tahmin)

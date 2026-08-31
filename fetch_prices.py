@@ -138,8 +138,14 @@ def fetch_from_truncgil():
     if any(v is None for v in required):
         raise ValueError("Truncgil yanitinda beklenen alanlardan biri bulunamadi")
 
+    # 22 ayar (bilezik) altin, 24 ayar gram altinin (has altin) saflik oranina
+    # (22/24 = %91,6, kuyumcularda yaygin kullanilan yuvarlama) gore hesaplanir;
+    # ayri bir API alani gerektirmez, dogrudan gram fiyatindan turetilir.
+    gram22 = (round(gram[0] * 0.916, 2), round(gram[1] * 0.916, 2))
+
     return {
         "gram": {"buy": gram[0], "sell": gram[1]},
+        "gram22": {"buy": gram22[0], "sell": gram22[1]},
         "ceyrek": {"buy": ceyrek[0], "sell": ceyrek[1]},
         "yarim": {"buy": yarim[0], "sell": yarim[1]},
         "tam": {"buy": tam[0], "sell": tam[1]},
@@ -187,12 +193,14 @@ def fetch_from_yfinance_fallback():
     yarim_try = gram_try * 3.238
     tam_try = gram_try * 6.456
     cumhuriyet_try = gram_try * 6.666
+    gram22_try = gram_try * 0.916  # 22/24 ayar saflik orani
 
     def pair(v, spread=0.001):
         return {"buy": round(v * (1 - spread), 2), "sell": round(v * (1 + spread), 2)}
 
     return {
         "gram": pair(gram_try),
+        "gram22": pair(gram22_try),
         "ceyrek": pair(ceyrek_try),
         "yarim": pair(yarim_try),
         "tam": pair(tam_try),

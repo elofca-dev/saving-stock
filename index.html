@@ -391,6 +391,50 @@
     flex-shrink: 0;
   }
 
+  .summary-card { padding: 16px 16px 14px; }
+
+  .summary-total {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.9rem;
+    font-weight: 600;
+    margin-top: 4px;
+    line-height: 1.2;
+  }
+
+  .split-bar {
+    display: flex;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--border);
+    margin-top: 16px;
+  }
+
+  .split-fill { height: 100%; }
+  .split-gold { background: var(--accent-fill); }
+  .split-stock { background: var(--good); }
+
+  .split-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 8px;
+    font-size: 0.76rem;
+    color: var(--ink-2);
+  }
+
+  .split-legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+  .split-legend i {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
   .chart-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -538,6 +582,19 @@
     <div class="holding-list" id="stockList"></div>
   </section>
 
+  <section id="summarySection" hidden>
+    <h2 class="section-title">Toplam Birikim</h2>
+    <div class="card summary-card">
+      <div class="card-label">Toplam Birikim</div>
+      <div class="summary-total" id="summaryTotal">—</div>
+      <div class="split-bar"><div class="split-fill split-gold" id="splitGoldFill"></div><div class="split-fill split-stock" id="splitStockFill"></div></div>
+      <div class="split-legend">
+        <span><i class="split-gold"></i><span id="splitGoldPct">Altın %0</span></span>
+        <span><i class="split-stock"></i><span id="splitStockPct">Hisse / Fon %0</span></span>
+      </div>
+    </div>
+  </section>
+
   <section id="chartSection">
     <h2 class="section-title">Birikim Grafiği</h2>
     <div class="chart-card">
@@ -683,6 +740,7 @@
       wrap.innerHTML = '<div class="portfolio-empty">Henüz bir şey eklemedin. Aşağıdan aldığın altın veya dövizi ekleyerek kâr/zararını görebilirsin.</div>';
       summaryEl.hidden = true;
       renderPortfolioChart();
+      renderSummaryWidget();
       return;
     }
 
@@ -743,6 +801,7 @@
     pnlEl.textContent = arrow + " " + formatPrice(Math.abs(totalPnl), "TRY");
     document.getElementById("psPnlPct").textContent = " (" + (totalPct > 0 ? "+" : "") + totalPct.toFixed(1) + "%)";
     renderPortfolioChart();
+    renderSummaryWidget();
   }
 
   document.getElementById("holdType").addEventListener("change", updateFormLabels);
@@ -780,6 +839,7 @@
       wrap.innerHTML = '<div class="portfolio-empty">Henüz hisse veya fon eklemedin.</div>';
       summaryEl.hidden = true;
       renderPortfolioChart();
+      renderSummaryWidget();
       return;
     }
 
@@ -831,7 +891,7 @@
         renderStocks();
       });
     });
-    if (!anyPriced) { summaryEl.hidden = true; renderPortfolioChart(); return; }
+    if (!anyPriced) { summaryEl.hidden = true; renderPortfolioChart(); renderSummaryWidget(); return; }
     summaryEl.hidden = false;
     document.getElementById("stCost").textContent = formatPrice(totalCost, "TRY");
     document.getElementById("stValue").textContent = formatPrice(totalValue, "TRY");
@@ -844,6 +904,7 @@
     pnlEl.textContent = tarrow + " " + formatPrice(Math.abs(totalPnl), "TRY");
     document.getElementById("stPnlPct").textContent = " (" + (totalPct > 0 ? "+" : "") + totalPct.toFixed(1) + "%)";
     renderPortfolioChart();
+    renderSummaryWidget();
   }
 
   document.getElementById("stockForm").addEventListener("submit", function (evt) {
@@ -861,6 +922,53 @@
     document.getElementById("stockBuyPrice").value = "";
     renderStocks();
   });
+
+  // ---- Toplam birikim özeti ----
+  function currentGoldValueTRY() {
+    var total = 0;
+    loadHoldings().forEach(function (h) {
+      var t = typeInfo(h.type);
+      if (!t) return;
+      var current = sellBackPrice(h.type);
+      if (current === null) return;
+      var valueTRY = toTRY(h.type, h.qty * current);
+      if (typeof valueTRY === "number") total += valueTRY;
+    });
+    return total;
+  }
+
+  function currentStockValueTRY() {
+    var total = 0;
+    loadStocks().forEach(function (s) {
+      var auto = autoPrice(s.symbol);
+      if (auto !== null) total += s.qty * auto;
+    });
+    return total;
+  }
+
+  function renderSummaryWidget() {
+    var section = document.getElementById("summarySection");
+    if (!section) return;
+
+    var goldVal = currentGoldValueTRY();
+    var stockVal = currentStockValueTRY();
+    var total = goldVal + stockVal;
+
+    if (total <= 0) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+
+    document.getElementById("summaryTotal").textContent = formatPrice(total, "TRY");
+
+    var goldPct = (goldVal / total) * 100;
+    var stockPct = (stockVal / total) * 100;
+    document.getElementById("splitGoldFill").style.width = goldPct + "%";
+    document.getElementById("splitStockFill").style.width = stockPct + "%";
+    document.getElementById("splitGoldPct").textContent = "Altın %" + goldPct.toFixed(0);
+    document.getElementById("splitStockPct").textContent = "Hisse / Fon %" + stockPct.toFixed(0);
+  }
 
   // ---- Birikim grafiği ----
   // TL mevduat karsilastirmasi: TCMB'nin acikladigi 3 aya kadar vadeli TL

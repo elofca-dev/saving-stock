@@ -1,4 +1,4 @@
-const CACHE_NAME = "savings-stocks-v3";
+const CACHE_NAME = "savings-stocks-v4";
 const CORE_ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -21,10 +21,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
 
+  // ÖNEMLİ: sade fetch(event.request) tarayıcının KENDİ http önbelleğine
+  // (GitHub Pages'in Cache-Control başlığına göre) düşebiliyor ve ağa hiç
+  // gitmeden eski bir kopyayı geri verebiliyordu. cache:"no-store" ile bu
+  // katmanı da tamamen devre dışı bırakıp her zaman gerçekten ağdan taze
+  // dosyayı istiyoruz; olmazsa (offline ise) service worker'ın kendi
+  // önbelleğine düşüyoruz.
+  const freshRequest = new Request(event.request.url, { cache: "no-store" });
+
   // data.json: her zaman ağdan taze veri dene, olmazsa önbelleğe düş.
   if (url.pathname.endsWith("data.json")) {
     event.respondWith(
-      fetch(event.request)
+      fetch(freshRequest)
         .then((res) => {
           const clone = res.clone();
           caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
@@ -41,7 +49,7 @@ self.addEventListener("fetch", (event) => {
   // açılışta hemen güncel sürümü görür; eski "önbellek öncelikli" strateji
   // yeni özelliklerin görünmesini bir uygulama daha geciktiriyordu.
   event.respondWith(
-    fetch(event.request)
+    fetch(freshRequest)
       .then((res) => {
         const clone = res.clone();
         caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));

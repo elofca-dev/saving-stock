@@ -287,7 +287,7 @@
     margin-bottom: 4px;
   }
 
-  select, input[type="number"], input[type="text"] {
+  select, input[type="number"], input[type="text"], input[type="date"] {
     width: 100%;
     font-family: 'Archivo', sans-serif;
     font-size: 0.88rem;
@@ -298,6 +298,11 @@
     padding: 9px 8px;
   }
   select:focus-visible, input:focus-visible { outline: 2px solid var(--accent-fill); outline-offset: 1px; }
+  input[type="date"] { color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) input[type="date"] { color-scheme: dark; }
+  }
+  :root[data-theme="dark"] input[type="date"] { color-scheme: dark; }
 
   .btn-primary {
     font-family: 'Archivo', sans-serif;
@@ -363,6 +368,121 @@
     flex-shrink: 0;
   }
   .holding-del:hover { color: var(--critical); }
+
+  .sell-btn {
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sell-btn:hover { color: var(--accent); border-color: var(--accent-fill); }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 18, 14, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    max-width: 440px;
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 10px;
+  }
+  @media (min-width: 520px) {
+    .modal-overlay { align-items: center; padding: 16px; }
+    .modal-card { border-radius: 18px; }
+  }
+  .modal-title { font-family: 'Newsreader', Georgia, serif; font-weight: 600; font-size: 1.1rem; }
+  .modal-sub { font-size: 0.78rem; color: var(--ink-3); margin-top: -6px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .modal-error { font-size: 0.76rem; color: var(--critical); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .modal-actions .btn-primary { flex: 1; }
+  .btn-cancel {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px;
+    cursor: pointer;
+    flex: 1;
+  }
+
+  .history-card { display: grid; gap: 4px; }
+  .history-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .history-summary-label { font-size: 0.78rem; color: var(--ink-2); }
+  .history-summary-value { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 1rem; }
+  .history-summary-value.up { color: var(--good); }
+  .history-summary-value.down { color: var(--critical); }
+  .history-summary-value.flat { color: var(--ink-2); }
+
+  .history-list { display: flex; flex-direction: column; gap: 12px; }
+  .history-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .history-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .history-label { font-size: 0.82rem; font-weight: 600; }
+  .history-date { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--ink-3); }
+  .history-detail { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-3); margin-top: 2px; }
+
+  .tx-badge {
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1px 7px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .tx-badge.tx-buy { color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+  .tx-badge.tx-sell { color: var(--critical); background: color-mix(in srgb, var(--critical) 16%, transparent); }
+
+  .tx-realized { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 0.82rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+  .tx-realized.up { color: var(--good); }
+  .tx-realized.down { color: var(--critical); }
+  .tx-realized.flat { color: var(--ink-2); }
+
+  .history-more-btn {
+    margin-top: 10px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 9px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .history-more-btn:hover { color: var(--accent); border-color: var(--accent-fill); }
 
   .price-edit-btn {
     border: none;
@@ -576,6 +696,7 @@
         <div><label class="field-label" for="holdQty" id="holdQtyLabel">Miktar</label><input type="number" id="holdQty" step="any" min="0" placeholder="10" required></div>
         <div><label class="field-label" for="holdPrice" id="holdPriceLabel">Alış fiyatı</label><input type="number" id="holdPrice" step="any" min="0" placeholder="6800" required></div>
       </div>
+      <div><label class="field-label" for="holdDate">Alım tarihi</label><input type="date" id="holdDate"></div>
       <button class="btn-primary" type="submit">Portföye Ekle</button>
     </form>
 
@@ -601,11 +722,21 @@
         <div><label class="field-label" for="stockQty">Miktar (adet)</label><input type="number" id="stockQty" step="any" min="0" placeholder="100" required></div>
         <div><label class="field-label" for="stockBuyPrice">Alış fiyatı (₺)</label><input type="number" id="stockBuyPrice" step="any" min="0" placeholder="45,20" required></div>
       </div>
+      <div><label class="field-label" for="stockDate">Alım tarihi</label><input type="date" id="stockDate"></div>
       <button class="btn-primary" type="submit">Portföye Ekle</button>
       <p class="form-note">Fiyat çekilen semboller için ekler eklemez kâr/zararını görürsün, tıpkı altında olduğu gibi. Yeni bir sembol takip listesine eklenmesi gerekiyorsa (fetch_prices.py), o sembolü ekleyip söylersen listeye ekleyip birkaç dakika içinde otomatik akmasını sağlarım.</p>
     </form>
 
     <div class="holding-list" id="stockList"></div>
+  </section>
+
+  <section id="historySection" hidden>
+    <h2 class="section-title">Alım-Satım Geçmişi</h2>
+    <div class="card history-card">
+      <div class="history-summary" id="historySummaryRow" hidden></div>
+      <div class="history-list" id="historyList"></div>
+      <button type="button" class="history-more-btn" id="historyMoreBtn" hidden>Tümünü göster</button>
+    </div>
   </section>
 
   <section id="summarySection" hidden>
@@ -635,6 +766,23 @@
     <div id="footerNote">Fiyatlar GitHub Actions üzerinden periyodik olarak güncellenir.</div>
     <div style="margin-top:6px;">Bu sayfayı ana ekranına ekleyerek uygulama gibi kullanabilirsin: paylaş / menü simgesinden "Ana Ekrana Ekle" seçeneğini kullan.</div>
   </footer>
+</div>
+
+<div class="modal-overlay" id="sellModal" hidden>
+  <div class="modal-card">
+    <div class="modal-title">Satış Kaydet</div>
+    <div class="modal-sub" id="sellModalSub"></div>
+    <div class="form-grid-2">
+      <div><label class="field-label" for="sellQtyInput">Miktar</label><input type="number" id="sellQtyInput" step="any" min="0"></div>
+      <div><label class="field-label" for="sellPriceInput" id="sellPriceLabel">Satış fiyatı</label><input type="number" id="sellPriceInput" step="any" min="0"></div>
+    </div>
+    <div><label class="field-label" for="sellDateInput">Satış tarihi</label><input type="date" id="sellDateInput"></div>
+    <div class="modal-error" id="sellModalError" hidden></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" id="sellCancelBtn">Vazgeç</button>
+      <button type="button" class="btn-primary" id="sellConfirmBtn">Satışı Kaydet</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -804,6 +952,7 @@
         '</div>' +
         '<div class="holding-actions">' +
           '<div class="holding-pnl">' + pnlHtml + '</div>' +
+          '<button class="sell-btn" type="button" aria-label="Satış kaydet" data-id="' + h.id + '">Sat</button>' +
           '<button class="holding-del" type="button" aria-label="Kaydı sil" data-id="' + h.id + '">×</button>' +
         '</div>';
       wrap.appendChild(row);
@@ -814,6 +963,27 @@
         var id = btn.getAttribute("data-id");
         saveHoldings(loadHoldings().filter(function (h) { return String(h.id) !== id; }));
         renderPortfolio();
+      });
+    });
+    wrap.querySelectorAll(".sell-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var h = loadHoldings().filter(function (x) { return String(x.id) === id; })[0];
+        if (!h) return;
+        var t = typeInfo(h.type);
+        if (!t) return;
+        var current = sellBackPrice(h.type);
+        openSellModal({
+          category: "gold",
+          id: h.id,
+          key: h.type,
+          label: t.label,
+          unit: UNIT_LABEL[h.type],
+          currency: t.currency,
+          maxQty: h.qty,
+          costBasis: h.unitCost,
+          defaultPrice: current
+        });
       });
     });
 
@@ -839,12 +1009,31 @@
     var qty = parseFloat(document.getElementById("holdQty").value);
     var unitCost = parseFloat(document.getElementById("holdPrice").value);
     if (!qty || qty <= 0 || !unitCost || unitCost <= 0) return;
+    var t = typeInfo(type);
+    var dateVal = document.getElementById("holdDate").value || todayISO();
     var list = loadHoldings();
-    list.push({ id: Date.now(), type: type, qty: qty, unitCost: unitCost });
+    list.push({ id: Date.now(), type: type, qty: qty, unitCost: unitCost, date: dateVal });
     saveHoldings(list);
+    addTx({
+      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      ts: Date.now(),
+      date: dateVal,
+      category: "gold",
+      key: type,
+      label: t ? t.label : type,
+      unit: UNIT_LABEL[type],
+      action: "buy",
+      qty: qty,
+      price: unitCost,
+      currency: t ? t.currency : "TRY",
+      realizedNative: null,
+      realizedTRY: null
+    });
     document.getElementById("holdQty").value = "";
     document.getElementById("holdPrice").value = "";
+    document.getElementById("holdDate").value = todayISO();
     renderPortfolio();
+    renderTxHistory();
   });
 
   // ---- Hisse / Fon portföyü ----
@@ -907,6 +1096,7 @@
         '</div>' +
         '<div class="holding-actions">' +
           '<div class="holding-pnl">' + pnlHtml + '</div>' +
+          '<button class="sell-btn" type="button" aria-label="Satış kaydet" data-id="' + s.id + '">Sat</button>' +
           '<button class="holding-del" type="button" aria-label="Kaydı sil" data-id="' + s.id + '">×</button>' +
         '</div>';
       wrap.appendChild(row);
@@ -917,6 +1107,25 @@
         var id = btn.getAttribute("data-id");
         saveStocks(loadStocks().filter(function (s) { return String(s.id) !== id; }));
         renderStocks();
+      });
+    });
+    wrap.querySelectorAll(".sell-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var s = loadStocks().filter(function (x) { return String(x.id) === id; })[0];
+        if (!s) return;
+        var auto = autoPrice(s.symbol);
+        openSellModal({
+          category: "stock",
+          id: s.id,
+          key: s.symbol,
+          label: s.symbol,
+          unit: "adet",
+          currency: "TRY",
+          maxQty: s.qty,
+          costBasis: s.buyPrice,
+          defaultPrice: auto
+        });
       });
     });
     if (!anyPriced) { summaryEl.hidden = true; renderPortfolioChart(); renderSummaryWidget(); return; }
@@ -941,14 +1150,202 @@
     var qty = parseFloat(document.getElementById("stockQty").value);
     var buyPrice = parseFloat(document.getElementById("stockBuyPrice").value);
     if (!symbol || !qty || qty <= 0 || !buyPrice || buyPrice <= 0) return;
-    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice };
+    var dateVal = document.getElementById("stockDate").value || todayISO();
+    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice, date: dateVal };
     var list = loadStocks();
     list.push(entry);
     saveStocks(list);
+    addTx({
+      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      ts: Date.now(),
+      date: dateVal,
+      category: "stock",
+      key: symbol,
+      label: symbol,
+      unit: "adet",
+      action: "buy",
+      qty: qty,
+      price: buyPrice,
+      currency: "TRY",
+      realizedNative: null,
+      realizedTRY: null
+    });
     document.getElementById("stockSymbol").value = "";
     document.getElementById("stockQty").value = "";
     document.getElementById("stockBuyPrice").value = "";
+    document.getElementById("stockDate").value = todayISO();
     renderStocks();
+    renderTxHistory();
+  });
+
+  // ---- Alım-Satım Geçmişi ----
+  function todayISO() {
+    var d = new Date();
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    var dd = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + mm + "-" + dd;
+  }
+  function fmtTxDate(iso) {
+    if (!iso) return "—";
+    var parts = iso.split("-");
+    if (parts.length !== 3) return iso;
+    return parts[2] + "." + parts[1] + "." + parts[0];
+  }
+
+  var TX_KEY = "transactionLog";
+  var TX_MAX = 400;
+  function loadTxLog() { try { return JSON.parse(localStorage.getItem(TX_KEY) || "[]"); } catch (e) { return []; } }
+  function saveTxLog(list) {
+    if (list.length > TX_MAX) list = list.slice(list.length - TX_MAX);
+    try { localStorage.setItem(TX_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  function addTx(entry) {
+    var list = loadTxLog();
+    list.push(entry);
+    saveTxLog(list);
+  }
+
+  var HISTORY_LIMIT = 12;
+  var historyExpanded = false;
+
+  function renderTxHistory() {
+    var section = document.getElementById("historySection");
+    var log = loadTxLog();
+    if (log.length === 0) { section.hidden = true; return; }
+    section.hidden = false;
+
+    var sorted = log.slice().sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return (b.ts || 0) - (a.ts || 0);
+    });
+
+    var toShow = historyExpanded ? sorted : sorted.slice(0, HISTORY_LIMIT);
+    var listEl = document.getElementById("historyList");
+    listEl.innerHTML = toShow.map(function (tx) {
+      var badgeCls = tx.action === "buy" ? "tx-buy" : "tx-sell";
+      var badgeText = tx.action === "buy" ? "Alım" : "Satım";
+      var amount = tx.qty * tx.price;
+      var priceLine = fmtQty(tx.qty) + " " + tx.unit + " · " + formatPrice(tx.price, tx.currency) + "/birim · " + formatPrice(amount, tx.currency);
+      var realizedHtml = "";
+      if (tx.action === "sell" && typeof tx.realizedTRY === "number") {
+        var cls = pnlClass(tx.realizedTRY);
+        var arrow = cls === "up" ? "▲" : (cls === "down" ? "▼" : "•");
+        realizedHtml = '<div class="tx-realized ' + cls + '">' + arrow + " " + formatPrice(Math.abs(tx.realizedTRY), "TRY") + '</div>';
+      }
+      return '<div class="history-row">' +
+        '<div class="history-main">' +
+          '<div class="history-top"><span class="tx-badge ' + badgeCls + '">' + badgeText + '</span><span class="history-label">' + tx.label + '</span><span class="history-date">' + fmtTxDate(tx.date) + '</span></div>' +
+          '<div class="history-detail">' + priceLine + '</div>' +
+        '</div>' +
+        realizedHtml +
+      '</div>';
+    }).join("");
+
+    var moreBtn = document.getElementById("historyMoreBtn");
+    if (sorted.length > HISTORY_LIMIT) {
+      moreBtn.hidden = false;
+      moreBtn.textContent = historyExpanded ? "Daha az göster" : "Tümünü göster (" + sorted.length + ")";
+    } else {
+      moreBtn.hidden = true;
+    }
+
+    var realizedTotal = log.reduce(function (sum, tx) {
+      return sum + (typeof tx.realizedTRY === "number" ? tx.realizedTRY : 0);
+    }, 0);
+    var summaryRow = document.getElementById("historySummaryRow");
+    if (Math.abs(realizedTotal) > 0.005) {
+      var rcls = pnlClass(realizedTotal);
+      var rarrow = rcls === "up" ? "▲" : (rcls === "down" ? "▼" : "•");
+      summaryRow.hidden = false;
+      summaryRow.innerHTML = '<span class="history-summary-label">Satışlardan gerçekleşen kâr/zarar</span>' +
+        '<span class="history-summary-value ' + rcls + '">' + rarrow + " " + formatPrice(Math.abs(realizedTotal), "TRY") + '</span>';
+    } else {
+      summaryRow.hidden = true;
+    }
+  }
+
+  document.getElementById("historyMoreBtn").addEventListener("click", function () {
+    historyExpanded = !historyExpanded;
+    renderTxHistory();
+  });
+
+  // ---- Satış modalı ----
+  var sellContext = null;
+
+  function openSellModal(ctx) {
+    sellContext = ctx;
+    document.getElementById("sellModalSub").textContent =
+      ctx.label + " · elinde " + fmtQty(ctx.maxQty) + " " + ctx.unit + " var";
+    var sym = ctx.currency === "USD" ? "$" : "₺";
+    document.getElementById("sellPriceLabel").textContent = "Satış fiyatı (" + sym + ")";
+    document.getElementById("sellQtyInput").value = ctx.maxQty;
+    document.getElementById("sellPriceInput").value = ctx.defaultPrice !== null && ctx.defaultPrice !== undefined ? ctx.defaultPrice : "";
+    document.getElementById("sellDateInput").value = todayISO();
+    document.getElementById("sellModalError").hidden = true;
+    document.getElementById("sellModal").hidden = false;
+  }
+  function closeSellModal() {
+    sellContext = null;
+    document.getElementById("sellModal").hidden = true;
+  }
+  function showSellError(msg) {
+    var el = document.getElementById("sellModalError");
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  document.getElementById("sellCancelBtn").addEventListener("click", closeSellModal);
+  document.getElementById("sellModal").addEventListener("click", function (evt) {
+    if (evt.target.id === "sellModal") closeSellModal();
+  });
+
+  document.getElementById("sellConfirmBtn").addEventListener("click", function () {
+    if (!sellContext) return;
+    var qty = parseFloat(document.getElementById("sellQtyInput").value);
+    var price = parseFloat(document.getElementById("sellPriceInput").value);
+    var dateVal = document.getElementById("sellDateInput").value || todayISO();
+    if (!qty || qty <= 0) { showSellError("Geçerli bir miktar gir."); return; }
+    if (!price || price <= 0) { showSellError("Geçerli bir satış fiyatı gir."); return; }
+    if (qty > sellContext.maxQty + 1e-9) { showSellError("Elindeki miktardan fazlasını satamazsın."); return; }
+
+    if (sellContext.category === "gold") {
+      var list = loadHoldings();
+      var idx = -1;
+      for (var i = 0; i < list.length; i++) { if (String(list[i].id) === String(sellContext.id)) { idx = i; break; } }
+      if (idx === -1) { closeSellModal(); return; }
+      if (qty >= list[idx].qty - 1e-9) { list.splice(idx, 1); } else { list[idx].qty -= qty; }
+      saveHoldings(list);
+    } else {
+      var slist = loadStocks();
+      var sidx = -1;
+      for (var j = 0; j < slist.length; j++) { if (String(slist[j].id) === String(sellContext.id)) { sidx = j; break; } }
+      if (sidx === -1) { closeSellModal(); return; }
+      if (qty >= slist[sidx].qty - 1e-9) { slist.splice(sidx, 1); } else { slist[sidx].qty -= qty; }
+      saveStocks(slist);
+    }
+
+    var realizedNative = qty * (price - sellContext.costBasis);
+    var realizedTRY = toTRY(sellContext.key, realizedNative);
+    addTx({
+      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      ts: Date.now(),
+      date: dateVal,
+      category: sellContext.category,
+      key: sellContext.key,
+      label: sellContext.label,
+      unit: sellContext.unit,
+      action: "sell",
+      qty: qty,
+      price: price,
+      currency: sellContext.currency,
+      realizedNative: realizedNative,
+      realizedTRY: typeof realizedTRY === "number" ? realizedTRY : null
+    });
+
+    closeSellModal();
+    renderPortfolio();
+    renderStocks();
+    renderTxHistory();
   });
 
   // ---- Toplam birikim özeti ----
@@ -1305,6 +1702,7 @@
     renderCards();
     renderPortfolio();
     renderStocks();
+    renderTxHistory();
   }
 
   function loadData() {
@@ -1323,6 +1721,8 @@
   });
 
   populateHoldTypeSelect();
+  document.getElementById("holdDate").value = todayISO();
+  document.getElementById("stockDate").value = todayISO();
   loadData();
   setInterval(loadData, 60 * 1000);
 

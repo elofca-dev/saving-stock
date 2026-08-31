@@ -28,8 +28,18 @@ from datetime import datetime, timezone, timedelta
 # BURAYI DUZENLE: takip etmek istedigin BIST hisseleri ve TEFAS fon kodlari.
 # ---------------------------------------------------------------------------
 BIST_SYMBOLS = [
-    # "THYAO",
-    # "GARAN",
+    "AEFES", "AKBNK", "AKSA", "AKSEN", "ALARK", "ALTNY", "ANSGR", "ARCLK", "ASELS", "ASTOR",
+    "BALSU", "BERA", "BIMAS", "BRSAN", "BRYAT", "BSOKE", "BTCIM", "CANTE", "CCOLA", "CIMSA",
+    "CVKMD", "CWENE", "DAPGM", "DOAS", "DOHOL", "DSTKF", "ECILC", "EFOR", "EKGYO", "ENERY",
+    "ENJSA", "ENKAI", "EREGL", "ESEN", "EUPWR", "EUREN", "FENER", "FROTO", "GARAN", "GENIL",
+    "GESAN", "GLRMK", "GRSEL", "GRTHO", "GSRAY", "GUBRF", "HALKB", "HEKTS", "IEYHO", "ISCTR",
+    "ISMEN", "IZENR", "KCHOL", "KLRHO", "KRDMD", "KTLEV", "KUYAS", "MAGEN", "MAVI", "MGROS",
+    "MIATK", "MPARK", "OBAMS", "ODAS", "ODINE", "OTKAR", "OYAKC", "PAHOL", "PASEU", "PATEK",
+    "PETKM", "PGSUS", "PSGYO", "QUAGR", "RALYH", "REEDR", "SAHOL", "SARKY", "SASA", "SISE",
+    "SKBNK", "SOKM", "TAVHL", "TCELL", "THYAO", "TKFEN", "TOASO", "TRALT", "TRENJ", "TRMET",
+    "TSKB", "TTKOM", "TUKAS", "TUPRS", "TURSG", "ULKER", "VAKBN", "VESTL", "YKBNK", "ZOREN",
+    # BIST 100 endeksi ceyreklik olarak yeniden dengeleniyor; liste 31 Agustos 2026 itibariyle
+    # guncel bilesenleri yansitiyor. Endeks degistiginde bu listeyi elden guncellemen gerekir.
 ]
 
 FON_KODLARI = [

@@ -20,6 +20,7 @@ duzenlemen yeterli.
 import json
 import os
 import sys
+import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone, timedelta
@@ -66,10 +67,20 @@ def load_existing():
     return {"updatedAt": None, "source": None, "prices": {}, "history": [], "stocks": {}}
 
 
-def http_get_json(url, timeout=15):
-    req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+def http_get_json(url, timeout=15, retries=2):
+    """Basit yeniden deneme ile JSON ceker; gecici agi/timeout hatalarinda
+    gereksiz yere yfinance yaklasik degerlerine dusmemek icin."""
+    last_err = None
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            last_err = e
+            if attempt < retries - 1:
+                time.sleep(2)
+    raise last_err
 
 
 def parse_tl_number(raw):
@@ -153,11 +164,14 @@ def fetch_from_yfinance_fallback():
     xauusd = yf_last_price(["XAUUSD=X", "GC=F"])
 
     gram_try = (xauusd / 31.1034768) * usdtry
-    # Yaklasik agirlik katsayilari (has altin bazinda kaba tahmin)
-    ceyrek_try = gram_try * 1.75
-    yarim_try = gram_try * 3.5
-    tam_try = gram_try * 7.0
-    cumhuriyet_try = gram_try * 7.216
+    # Katsayilar 1.75/3.5/7.0 gibi kaba gram agirligi degil, piyasada gozlenen
+    # gercek fiyat oranlarina (doviz.com/Truncgil karsilastirmasi) dayanir;
+    # ceyrek altin 22 ayar oldugundan gram altinin (24 ayar) 1.75 kati degil,
+    # yaklasik 1.62 kati fiyatlanir.
+    ceyrek_try = gram_try * 1.619
+    yarim_try = gram_try * 3.238
+    tam_try = gram_try * 6.456
+    cumhuriyet_try = gram_try * 6.666
 
     def pair(v, spread=0.001):
         return {"buy": round(v * (1 - spread), 2), "sell": round(v * (1 + spread), 2)}

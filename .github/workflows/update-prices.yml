@@ -39,7 +39,7 @@ jobs:
 
       - name: Değişiklik varsa commit'le
         run: |
-          git config user.name "altin-takip-bot"
+          git config user.name "savings-stocks-bot"
           git config user.email "actions@users.noreply.github.com"
           if ! git diff --quiet -- data.json; then
             git add data.json

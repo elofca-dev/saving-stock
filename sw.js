@@ -1,4 +1,4 @@
-const CACHE_NAME = "altin-takip-v1";
+const CACHE_NAME = "savings-stocks-v2";
 const CORE_ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {

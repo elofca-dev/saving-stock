@@ -11,7 +11,9 @@ Bu script:
   3) FON_KODLARI listesindeki TEFAS fonlarini tefas.gov.tr'nin herkese acik
      (resmi dokumantasyonu olmayan) uc noktasindan cekmeyi dener; basarisiz
      olursa o fonu atlar.
-  4) Sonucu data.json'a yazar (mevcut dosyayla ayni sema, gecmis kirpilir).
+  4) Sonucu data.json'a yazar. "history" (altin/doviz) ve "stocksHistory"
+     (hisse/fon) gunde bir nokta tutar - boylece siteki "birikim grafigi"
+     zaman ekseninde anlamli bir buyume gosterir, dosya da sismez.
 
 Yeni hisse/fon eklemek icin asagidaki BIST_SYMBOLS / FON_KODLARI listelerini
 duzenlemen yeterli.
@@ -49,12 +51,25 @@ FON_KODLARI = [
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
 TR_TZ = timezone(timedelta(hours=3))
-MAX_HISTORY = 240  # ~10 gun, saatlik firing varsayimiyla
+MAX_HISTORY_DAYS = 200  # ~6-7 ay, gunluk bir nokta varsayimiyla
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; AltinTakipBot/1.0)"}
 
 
 def now_iso():
     return datetime.now(TR_TZ).isoformat(timespec="seconds")
+
+
+def today_str():
+    return datetime.now(TR_TZ).strftime("%Y-%m-%d")
+
+
+def last_entry_date(history_list):
+    if not history_list:
+        return None
+    try:
+        return history_list[-1]["t"][:10]
+    except Exception:
+        return None
 
 
 def load_existing():
@@ -64,7 +79,7 @@ def load_existing():
                 return json.load(f)
         except Exception:
             pass
-    return {"updatedAt": None, "source": None, "prices": {}, "history": [], "stocks": {}}
+    return {"updatedAt": None, "source": None, "prices": {}, "history": [], "stocks": {}, "stocksHistory": []}
 
 
 def http_get_json(url, timeout=15, retries=2):
@@ -259,6 +274,7 @@ def main():
         sys.exit(1)
 
     ts = now_iso()
+    today = today_str()
     out = dict(existing)
 
     if prices is not None:
@@ -266,12 +282,16 @@ def main():
         out["source"] = source
         out["prices"] = prices
 
+        # Gunluk grafik icin: gun basina sadece bir nokta tutulur (ilk basarili
+        # calisma o gunku degeri yazar), boylece data.json 5 dakikada bir degil
+        # gunde bir buyur.
         history = existing.get("history", [])
-        point = {"t": ts}
-        for k, v in prices.items():
-            point[k] = v["sell"] if isinstance(v, dict) else v
-        history.append(point)
-        out["history"] = history[-MAX_HISTORY:]
+        if last_entry_date(history) != today:
+            point = {"t": ts}
+            for k, v in prices.items():
+                point[k] = v["sell"] if isinstance(v, dict) else v
+            history.append(point)
+        out["history"] = history[-MAX_HISTORY_DAYS:]
     else:
         print("[uyari] Altin/doviz verisi guncellenemedi, eski deger korunuyor.", file=sys.stderr)
 
@@ -280,6 +300,11 @@ def main():
         merged_stocks.update(stocks)
         out["stocks"] = merged_stocks
         out["stocksUpdatedAt"] = ts
+
+        stocks_history = existing.get("stocksHistory", [])
+        if last_entry_date(stocks_history) != today:
+            stocks_history.append({"t": ts, **merged_stocks})
+        out["stocksHistory"] = stocks_history[-MAX_HISTORY_DAYS:]
 
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)

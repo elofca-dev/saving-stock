@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Altin Takip - fiyat guncelleme script'i.
+Savings & Stocks - fiyat guncelleme script'i.
 
 Bu script:
   1) Altin (gram/ceyrek/yarim/tam/cumhuriyet) ve doviz (USD/EUR) fiyatlarini

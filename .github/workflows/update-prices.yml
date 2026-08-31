@@ -13,6 +13,12 @@ on:
 permissions:
   contents: write
 
+# Ayni anda birden fazla calisma (ornegin zamanlanan calisma ile push tetiklemesi
+# ust uste binerse) ayni data.json'a paralel push denemesin diye siraya sokulur.
+concurrency:
+  group: update-prices
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -38,7 +44,19 @@ jobs:
           if ! git diff --quiet -- data.json; then
             git add data.json
             git commit -m "Fiyatları güncelle: $(date -u +'%Y-%m-%d %H:%M UTC')"
-            git push
+            # concurrency grubu ayni anda iki calismayi engeller, ama yine de
+            # remote'ta yeni bir commit varsa (ornegin elle bir duzenleme)
+            # rebase edip yeniden dene; boylece "rejected (fetch first)" hatasi
+            # is akisini kirmaz.
+            for i in 1 2 3 4 5; do
+              if git push; then
+                break
+              fi
+              echo "Push basarisiz, remote'u alip rebase ediliyor (deneme $i)..."
+              git fetch origin main
+              git rebase origin/main
+              sleep $((i * 3))
+            done
           else
             echo "Değişiklik yok, commit atılmadı."
           fi

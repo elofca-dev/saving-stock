@@ -1,0 +1,13 @@
+{
+  "name": "Altın Takip",
+  "short_name": "Altın Takip",
+  "description": "Gram, çeyrek, yarım, tam, cumhuriyet altını, dolar, euro ve portföy takibi.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#14120E",
+  "theme_color": "#14120E",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

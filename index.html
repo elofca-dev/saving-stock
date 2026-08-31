@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Altın Takip</title>
+<meta name="theme-color" content="#14120E">
+<meta name="description" content="Gram, çeyrek, yarım, tam, cumhuriyet altını, dolar, euro ve portföy takibi.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Altın Takip">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #ECE5D6;
+    --surface: #F8F4EA;
+    --surface-2: #FFFFFF;
+    --ink: #1E1A12;
+    --ink-2: #5B5344;
+    --ink-3: #8C8371;
+    --border: #DCD1B8;
+    --accent: #8C6215;
+    --accent-fill: #C89B3C;
+    --good: #2F7A4F;
+    --critical: #B23B3B;
+    --shadow: 0 1px 2px rgba(30, 26, 18, 0.06), 0 8px 24px rgba(30, 26, 18, 0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14120E;
+      --surface: #1D1A14;
+      --surface-2: #262119;
+      --ink: #F3EEE1;
+      --ink-2: #C9C0AC;
+      --ink-3: #8F8672;
+      --border: #332C20;
+      --accent: #D9AE4E;
+      --accent-fill: #D9AE4E;
+      --good: #5FBE84;
+      --critical: #E58080;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #14120E;
+    --surface: #1D1A14;
+    --surface-2: #262119;
+    --ink: #F3EEE1;
+    --ink-2: #C9C0AC;
+    --ink-3: #8F8672;
+    --border: #332C20;
+    --accent: #D9AE4E;
+    --accent-fill: #D9AE4E;
+    --good: #5FBE84;
+    --critical: #E58080;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 18px 64px;
+  }
+
+  header.masthead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 18px 12px;
+    margin: 0 -18px 20px;
+  }
+
+  .masthead-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .pulse {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--good);
+    flex-shrink: 0;
+    align-self: center;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .pulse.stale { background: var(--critical); }
+
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 45%, transparent); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 5px transparent; }
+  }
+
+  .refresh-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-2);
+    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .refresh-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+  .refresh-btn:focus-visible { outline: 2px solid var(--accent-fill); outline-offset: 2px; }
+  .refresh-btn svg { width: 16px; height: 16px; }
+  .refresh-btn.spinning svg { animation: spin 0.7s linear; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .meta-row {
+    margin-top: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-3);
+    letter-spacing: 0.02em;
+  }
+
+  h2.section-title {
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+
+  section { margin-top: 32px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .subgrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+
+  .card-price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.28rem;
+    font-weight: 600;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.74rem;
+    color: var(--ink-3);
+    margin-top: 2px;
+  }
+
+  .delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+  }
+  .delta.up { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+  .delta.down { color: var(--critical); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+  .delta.flat { color: var(--ink-3); background: color-mix(in srgb, var(--ink-3) 14%, transparent); }
+
+  .portfolio-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+
+  .ps-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ps-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+  .ps-value { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 1.15rem; font-weight: 600; margin-top: 4px; }
+
+  .ps-pnl {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .ps-pnl-label { font-size: 0.78rem; color: var(--ink-2); }
+  .ps-pnl-value { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 1.3rem; font-weight: 700; }
+  .ps-pnl-value.up { color: var(--good); }
+  .ps-pnl-value.down { color: var(--critical); }
+  .ps-pnl-value.flat { color: var(--ink-2); }
+  .ps-pnl-pct { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 600; margin-left: 6px; }
+
+  .portfolio-empty { color: var(--ink-3); font-size: 0.82rem; padding: 2px 2px 14px; }
+
+  .portfolio-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  label.field-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-3);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  select, input[type="number"], input[type="text"] {
+    width: 100%;
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 8px;
+  }
+  select:focus-visible, input:focus-visible { outline: 2px solid var(--accent-fill); outline-offset: 1px; }
+
+  .btn-primary {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--bg);
+    background: var(--ink);
+    border: none;
+    border-radius: 8px;
+    padding: 11px;
+    cursor: pointer;
+  }
+  .btn-primary:hover { background: var(--accent); }
+  .btn-primary:focus-visible { outline: 2px solid var(--accent-fill); outline-offset: 2px; }
+
+  .form-note { font-size: 0.72rem; color: var(--ink-3); line-height: 1.4; }
+
+  .holding-list { display: grid; gap: 8px; }
+
+  .holding-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .holding-main { display: flex; flex-direction: column; gap: 2px; }
+  .holding-type { font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .holding-detail { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-3); }
+
+  .auto-tag {
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--good);
+    background: color-mix(in srgb, var(--good) 16%, transparent);
+    padding: 1px 6px;
+    border-radius: 999px;
+  }
+
+  .holding-pnl { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .holding-pnl-amount { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 0.88rem; font-weight: 700; }
+  .holding-pnl-amount.up { color: var(--good); }
+  .holding-pnl-amount.down { color: var(--critical); }
+  .holding-pnl-amount.flat { color: var(--ink-2); }
+
+  .holding-actions { display: flex; align-items: center; gap: 8px; }
+
+  .holding-del {
+    border: none;
+    background: none;
+    color: var(--ink-3);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+  .holding-del:hover { color: var(--critical); }
+
+  .price-edit-btn {
+    border: none;
+    background: none;
+    color: var(--ink-3);
+    cursor: pointer;
+    font-size: 0.68rem;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .price-edit-btn:hover { color: var(--accent); }
+
+  .price-edit-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .price-edit-row input { width: 84px; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; padding: 5px 6px; }
+  .price-edit-row button {
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--bg);
+    background: var(--ink);
+    border: none;
+    border-radius: 6px;
+    padding: 5px 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 420px) {
+    .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .card-price { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="masthead-row">
+      <div class="logo"><span class="pulse" id="pulseDot" aria-hidden="true"></span>Altın Takip</div>
+      <button class="refresh-btn" id="refreshBtn" type="button" aria-label="Yenile" title="Yenile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+    </div>
+    <div class="meta-row" id="metaRow">Yükleniyor…</div>
+  </header>
+
+  <section id="priceSection">
+    <h2 class="section-title">Altın Fiyatları</h2>
+    <div class="grid" id="priceGrid"></div>
+  </section>
+
+  <section id="fxSection">
+    <h2 class="section-title">Döviz</h2>
+    <div class="subgrid" id="fxGrid"></div>
+  </section>
+
+  <section id="portfolioSection">
+    <h2 class="section-title">Portföyüm</h2>
+    <div class="portfolio-summary" id="portfolioSummary" hidden>
+      <div class="ps-row">
+        <div><div class="ps-label">Maliyet</div><div class="ps-value" id="psCost">—</div></div>
+        <div><div class="ps-label">Güncel Değer</div><div class="ps-value" id="psValue">—</div></div>
+      </div>
+      <div class="ps-pnl">
+        <span class="ps-pnl-label">Kâr / Zarar</span>
+        <span><span class="ps-pnl-value" id="psPnl">—</span><span class="ps-pnl-pct" id="psPnlPct"></span></span>
+      </div>
+    </div>
+
+    <form class="portfolio-form" id="portfolioForm">
+      <div class="form-grid">
+        <div><label class="field-label" for="holdType">Tür</label><select id="holdType"></select></div>
+        <div><label class="field-label" for="holdQty" id="holdQtyLabel">Miktar</label><input type="number" id="holdQty" step="any" min="0" placeholder="10" required></div>
+        <div><label class="field-label" for="holdPrice" id="holdPriceLabel">Aldığım fiyat</label><input type="number" id="holdPrice" step="any" min="0" placeholder="6800" required></div>
+      </div>
+      <button class="btn-primary" type="submit">Portföye Ekle</button>
+    </form>
+
+    <div class="holding-list" id="holdingList"></div>
+  </section>
+
+  <section id="stockSection">
+    <h2 class="section-title">Portföyüm Hisse</h2>
+    <div class="portfolio-summary" id="stockSummary" hidden>
+      <div class="ps-row">
+        <div><div class="ps-label">Maliyet</div><div class="ps-value" id="stCost">—</div></div>
+        <div><div class="ps-label">Güncel Değer</div><div class="ps-value" id="stValue">—</div></div>
+      </div>
+      <div class="ps-pnl">
+        <span class="ps-pnl-label">Kâr / Zarar</span>
+        <span><span class="ps-pnl-value" id="stPnl">—</span><span class="ps-pnl-pct" id="stPnlPct"></span></span>
+      </div>
+    </div>
+
+    <form class="portfolio-form" id="stockForm">
+      <div class="form-grid">
+        <div><label class="field-label" for="stockSymbol">Sembol / Fon</label><input type="text" id="stockSymbol" placeholder="THYAO" required></div>
+        <div><label class="field-label" for="stockQty">Miktar (adet)</label><input type="number" id="stockQty" step="any" min="0" placeholder="100" required></div>
+        <div><label class="field-label" for="stockBuyPrice">Alış fiyatı (₺)</label><input type="number" id="stockBuyPrice" step="any" min="0" placeholder="45,20" required></div>
+      </div>
+      <div>
+        <label class="field-label" for="stockCurrentPrice">Güncel fiyat (₺) — otomatik takip ediliyorsa boş bırakabilirsin</label>
+        <input type="number" id="stockCurrentPrice" step="any" min="0" placeholder="48,60">
+      </div>
+      <button class="btn-primary" type="submit">Portföye Ekle</button>
+      <p class="form-note">fetch_prices.py içindeki BIST_SYMBOLS / FON_KODLARI listesinde olan semboller otomatik güncellenir (yeşil "otomatik" etiketiyle görünür). Listede olmayan semboller için güncel fiyatı elle giriyorsun; satırdaki "fiyatı güncelle" ile tazeleyebilirsin.</p>
+    </form>
+
+    <div class="holding-list" id="stockList"></div>
+  </section>
+
+  <footer>
+    <div id="footerNote">Fiyatlar GitHub Actions üzerinden periyodik olarak güncellenir.</div>
+    <div style="margin-top:6px;">Bu sayfayı ana ekranına ekleyerek uygulama gibi kullanabilirsin: paylaş / menü simgesinden "Ana Ekrana Ekle" seçeneğini kullan.</div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TYPES = [
+    { key: "gram", label: "Gram Altın", currency: "TRY", category: "gold" },
+    { key: "ceyrek", label: "Çeyrek Altın", currency: "TRY", category: "gold" },
+    { key: "yarim", label: "Yarım Altın", currency: "TRY", category: "gold" },
+    { key: "tam", label: "Tam Altın", currency: "TRY", category: "gold" },
+    { key: "cumhuriyet", label: "Cumhuriyet Altını", currency: "TRY", category: "gold" },
+    { key: "ons", label: "Ons Altın", currency: "USD", category: "gold" },
+    { key: "usd", label: "Dolar", currency: "TRY", category: "fx" },
+    { key: "eur", label: "Euro", currency: "TRY", category: "fx" }
+  ];
+
+  var UNIT_LABEL = {
+    gram: "gram", ceyrek: "adet", yarim: "adet", tam: "adet",
+    cumhuriyet: "adet", ons: "ons", usd: "dolar", eur: "euro"
+  };
+
+  var DATA = { updatedAt: null, prices: {}, history: [], stocks: {} };
+
+  var fmtTRY = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var fmtUSD = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function formatPrice(value, currency) {
+    if (value === undefined || value === null || isNaN(value)) return "—";
+    return currency === "USD" ? "$" + fmtUSD.format(value) : "₺" + fmtTRY.format(value);
+  }
+
+  function typeInfo(key) { return TYPES.filter(function (t) { return t.key === key; })[0] || null; }
+
+  function prevHistoryValue(key) {
+    var h = DATA.history || [];
+    if (h.length < 2) return null;
+    var last = h[h.length - 1][key];
+    for (var i = h.length - 2; i >= 0; i--) {
+      if (h[i][key] !== undefined && h[i][key] !== last) return h[i][key];
+    }
+    return h[0][key];
+  }
+
+  function renderMeta() {
+    var el = document.getElementById("metaRow");
+    var dot = document.getElementById("pulseDot");
+    if (!DATA.updatedAt) { el.textContent = "Veri bekleniyor"; return; }
+    var d = new Date(DATA.updatedAt);
+    var fmt = new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    var ageMin = (Date.now() - d.getTime()) / 60000;
+    el.textContent = "Son güncelleme: " + fmt.format(d) + (ageMin > 90 ? " (bayat olabilir)" : "");
+    dot.classList.toggle("stale", ageMin > 90);
+  }
+
+  function buildCard(t) {
+    var p = DATA.prices[t.key] || {};
+    var prevBuy = prevHistoryValue(t.key);
+    var card = document.createElement("div");
+    card.className = "card";
+    var deltaHtml = "";
+    if (prevBuy !== null && p.buy) {
+      var pct = ((p.buy - prevBuy) / prevBuy) * 100;
+      var cls = pct > 0.005 ? "up" : (pct < -0.005 ? "down" : "flat");
+      var arrow = cls === "up" ? "▲" : (cls === "down" ? "▼" : "•");
+      deltaHtml = '<span class="delta ' + cls + '">' + arrow + " " + Math.abs(pct).toFixed(2) + "%</span>";
+    }
+    card.innerHTML =
+      '<div class="card-label">' + t.label + '</div>' +
+      '<div class="card-price">' + formatPrice(p.sell, t.currency) + '</div>' +
+      '<div class="card-sub">Alış ' + formatPrice(p.buy, t.currency) + '</div>' +
+      deltaHtml;
+    return card;
+  }
+
+  function renderCards() {
+    var goldGrid = document.getElementById("priceGrid");
+    var fxGrid = document.getElementById("fxGrid");
+    goldGrid.innerHTML = ""; fxGrid.innerHTML = "";
+    TYPES.forEach(function (t) {
+      var card = buildCard(t);
+      (t.category === "fx" ? fxGrid : goldGrid).appendChild(card);
+    });
+  }
+
+  function sellBackPrice(key) {
+    var p = DATA.prices[key];
+    return p && typeof p.buy === "number" ? p.buy : null;
+  }
+  function toTRY(key, amount) {
+    if (key === "ons") {
+      var usd = DATA.prices.usd;
+      var rate = usd && (usd.buy || usd.sell);
+      return rate ? amount * rate : null;
+    }
+    return amount;
+  }
+
+  var PORTFOLIO_KEY = "goldPortfolio";
+  function loadHoldings() { try { return JSON.parse(localStorage.getItem(PORTFOLIO_KEY) || "[]"); } catch (e) { return []; } }
+  function saveHoldings(list) { try { localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(list)); } catch (e) {} }
+
+  function populateHoldTypeSelect() {
+    var sel = document.getElementById("holdType");
+    sel.innerHTML = "";
+    TYPES.forEach(function (t) {
+      var o = document.createElement("option");
+      o.value = t.key; o.textContent = t.label;
+      sel.appendChild(o);
+    });
+    updateFormLabels();
+  }
+  function updateFormLabels() {
+    var t = typeInfo(document.getElementById("holdType").value);
+    if (!t) return;
+    var sym = t.currency === "USD" ? "$" : "₺";
+    document.getElementById("holdQtyLabel").textContent = "Miktar (" + UNIT_LABEL[t.key] + ")";
+    document.getElementById("holdPriceLabel").textContent = "Aldığım fiyat (" + sym + ")";
+  }
+
+  function pnlClass(pnl) { return pnl > 0.005 ? "up" : (pnl < -0.005 ? "down" : "flat"); }
+
+  function renderPortfolio() {
+    var list = loadHoldings();
+    var wrap = document.getElementById("holdingList");
+    var summaryEl = document.getElementById("portfolioSummary");
+    wrap.innerHTML = "";
+
+    if (list.length === 0) {
+      wrap.innerHTML = '<div class="portfolio-empty">Henüz bir şey eklemedin. Aşağıdan aldığın altın veya dövizi ekleyerek kâr/zararını görebilirsin.</div>';
+      summaryEl.hidden = true;
+      return;
+    }
+
+    var totalCostTRY = 0, totalValueTRY = 0;
+
+    list.forEach(function (h) {
+      var t = typeInfo(h.type);
+      if (!t) return;
+      var current = sellBackPrice(h.type);
+      var costTotal = h.qty * h.unitCost;
+      var valueTotal = current !== null ? h.qty * current : null;
+      var pnl = valueTotal !== null ? valueTotal - costTotal : null;
+      var pnlPct = (valueTotal !== null && costTotal > 0) ? (pnl / costTotal) * 100 : null;
+
+      var costTRY = toTRY(h.type, costTotal);
+      var valueTRY = valueTotal !== null ? toTRY(h.type, valueTotal) : null;
+      if (costTRY !== null && valueTRY !== null) { totalCostTRY += costTRY; totalValueTRY += valueTRY; }
+
+      var row = document.createElement("div");
+      row.className = "holding-row";
+      var pnlHtml = "—";
+      if (pnl !== null) {
+        var cls = pnlClass(pnl);
+        var arrow = cls === "up" ? "▲" : (cls === "down" ? "▼" : "•");
+        pnlHtml =
+          '<div class="holding-pnl-amount ' + cls + '">' + arrow + " " + formatPrice(Math.abs(pnl), t.currency) + '</div>' +
+          '<div class="holding-detail">' + (pnlPct !== null ? (pnlPct > 0 ? "+" : "") + pnlPct.toFixed(1) + "%" : "") + '</div>';
+      }
+      row.innerHTML =
+        '<div class="holding-main">' +
+          '<div class="holding-type">' + t.label + '</div>' +
+          '<div class="holding-detail">' + h.qty + " " + UNIT_LABEL[h.type] + " · maliyet " + formatPrice(h.unitCost, t.currency) + "/birim</div>" +
+        '</div>' +
+        '<div class="holding-actions">' +
+          '<div class="holding-pnl">' + pnlHtml + '</div>' +
+          '<button class="holding-del" type="button" aria-label="Kaydı sil" data-id="' + h.id + '">×</button>' +
+        '</div>';
+      wrap.appendChild(row);
+    });
+
+    wrap.querySelectorAll(".holding-del").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        saveHoldings(loadHoldings().filter(function (h) { return String(h.id) !== id; }));
+        renderPortfolio();
+      });
+    });
+
+    summaryEl.hidden = false;
+    document.getElementById("psCost").textContent = formatPrice(totalCostTRY, "TRY");
+    document.getElementById("psValue").textContent = formatPrice(totalValueTRY, "TRY");
+    var totalPnl = totalValueTRY - totalCostTRY;
+    var totalPct = totalCostTRY > 0 ? (totalPnl / totalCostTRY) * 100 : 0;
+    var cls = pnlClass(totalPnl);
+    var arrow = cls === "up" ? "▲" : (cls === "down" ? "▼" : "•");
+    var pnlEl = document.getElementById("psPnl");
+    pnlEl.className = "ps-pnl-value " + cls;
+    pnlEl.textContent = arrow + " " + formatPrice(Math.abs(totalPnl), "TRY");
+    document.getElementById("psPnlPct").textContent = " (" + (totalPct > 0 ? "+" : "") + totalPct.toFixed(1) + "%)";
+  }
+
+  document.getElementById("holdType").addEventListener("change", updateFormLabels);
+  document.getElementById("portfolioForm").addEventListener("submit", function (evt) {
+    evt.preventDefault();
+    var type = document.getElementById("holdType").value;
+    var qty = parseFloat(document.getElementById("holdQty").value);
+    var unitCost = parseFloat(document.getElementById("holdPrice").value);
+    if (!qty || qty <= 0 || !unitCost || unitCost <= 0) return;
+    var list = loadHoldings();
+    list.push({ id: Date.now(), type: type, qty: qty, unitCost: unitCost });
+    saveHoldings(list);
+    document.getElementById("holdQty").value = "";
+    document.getElementById("holdPrice").value = "";
+    renderPortfolio();
+  });
+
+  // ---- Hisse / Fon portföyü ----
+  var STOCK_KEY = "stockPortfolio";
+  var editingStockId = null;
+  function loadStocks() { try { return JSON.parse(localStorage.getItem(STOCK_KEY) || "[]"); } catch (e) { return []; } }
+  function saveStocks(list) { try { localStorage.setItem(STOCK_KEY, JSON.stringify(list)); } catch (e) {} }
+
+  function autoPrice(symbol) {
+    var stocks = DATA.stocks || {};
+    return typeof stocks[symbol] === "number" ? stocks[symbol] : null;
+  }
+
+  function renderStocks() {
+    var list = loadStocks();
+    var wrap = document.getElementById("stockList");
+    var summaryEl = document.getElementById("stockSummary");
+    wrap.innerHTML = "";
+
+    if (list.length === 0) {
+      wrap.innerHTML = '<div class="portfolio-empty">Henüz hisse veya fon eklemedin.</div>';
+      summaryEl.hidden = true;
+      return;
+    }
+
+    var totalCost = 0, totalValue = 0, anyPriced = false;
+
+    list.forEach(function (s) {
+      var auto = autoPrice(s.symbol);
+      var current = auto !== null ? auto : (typeof s.manualPrice === "number" ? s.manualPrice : null);
+      var costTotal = s.qty * s.buyPrice;
+      var valueTotal = current !== null ? s.qty * current : null;
+      var pnl = valueTotal !== null ? valueTotal - costTotal : null;
+      var pnlPct = (valueTotal !== null && costTotal > 0) ? (pnl / costTotal) * 100 : null;
+      if (valueTotal !== null) { totalCost += costTotal; totalValue += valueTotal; anyPriced = true; }
+
+      var row = document.createElement("div");
+      row.className = "holding-row";
+
+      var pnlHtml = "—";
+      if (pnl !== null) {
+        var cls = pnlClass(pnl);
+        var arrow = cls === "up" ? "▲" : (cls === "down" ? "▼" : "•");
+        pnlHtml =
+          '<div class="holding-pnl-amount ' + cls + '">' + arrow + " " + formatPrice(Math.abs(pnl), "TRY") + '</div>' +
+          '<div class="holding-detail">' + (pnlPct > 0 ? "+" : "") + pnlPct.toFixed(1) + "%</div>";
+      }
+
+      var priceLineHtml;
+      if (auto !== null) {
+        priceLineHtml = '<div class="holding-detail">' + s.qty + ' adet · maliyet ' + formatPrice(s.buyPrice, "TRY") + '/birim · güncel ' + formatPrice(auto, "TRY") + '/birim</div>';
+      } else if (editingStockId === s.id) {
+        priceLineHtml =
+          '<div class="price-edit-row">' +
+            '<input type="number" step="any" min="0" id="editPrice-' + s.id + '" value="' + (s.manualPrice || "") + '">' +
+            '<button type="button" class="price-save" data-id="' + s.id + '">Kaydet</button>' +
+          '</div>';
+      } else {
+        priceLineHtml =
+          '<div class="holding-detail">' + s.qty + ' adet · maliyet ' + formatPrice(s.buyPrice, "TRY") + '/birim · güncel ' + formatPrice(current, "TRY") + '/birim ' +
+          '<button type="button" class="price-edit-btn" data-id="' + s.id + '">fiyatı güncelle</button></div>';
+      }
+
+      row.innerHTML =
+        '<div class="holding-main">' +
+          '<div class="holding-type">' + s.symbol + (auto !== null ? '<span class="auto-tag">otomatik</span>' : '') + '</div>' +
+          priceLineHtml +
+        '</div>' +
+        '<div class="holding-actions">' +
+          '<div class="holding-pnl">' + pnlHtml + '</div>' +
+          '<button class="holding-del" type="button" aria-label="Kaydı sil" data-id="' + s.id + '">×</button>' +
+        '</div>';
+      wrap.appendChild(row);
+    });
+
+    wrap.querySelectorAll(".holding-del").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        saveStocks(loadStocks().filter(function (s) { return String(s.id) !== id; }));
+        renderStocks();
+      });
+    });
+    wrap.querySelectorAll(".price-edit-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        editingStockId = parseInt(btn.getAttribute("data-id"), 10);
+        renderStocks();
+        var input = document.getElementById("editPrice-" + editingStockId);
+        if (input) { input.focus(); input.select(); }
+      });
+    });
+    wrap.querySelectorAll(".price-save").forEach(function (btn) {
+      var save = function () {
+        var id = btn.getAttribute("data-id");
+        var input = document.getElementById("editPrice-" + id);
+        var val = parseFloat(input.value);
+        if (val && val > 0) {
+          var updated = loadStocks().map(function (s) {
+            if (String(s.id) === id) s.manualPrice = val;
+            return s;
+          });
+          saveStocks(updated);
+        }
+        editingStockId = null;
+        renderStocks();
+      };
+      btn.addEventListener("click", save);
+      var input = document.getElementById("editPrice-" + btn.getAttribute("data-id"));
+      if (input) input.addEventListener("keydown", function (evt) { if (evt.key === "Enter") { evt.preventDefault(); save(); } });
+    });
+
+    if (!anyPriced) { summaryEl.hidden = true; return; }
+    summaryEl.hidden = false;
+    document.getElementById("stCost").textContent = formatPrice(totalCost, "TRY");
+    document.getElementById("stValue").textContent = formatPrice(totalValue, "TRY");
+    var totalPnl = totalValue - totalCost;
+    var totalPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+    var tcls = pnlClass(totalPnl);
+    var tarrow = tcls === "up" ? "▲" : (tcls === "down" ? "▼" : "•");
+    var pnlEl = document.getElementById("stPnl");
+    pnlEl.className = "ps-pnl-value " + tcls;
+    pnlEl.textContent = tarrow + " " + formatPrice(Math.abs(totalPnl), "TRY");
+    document.getElementById("stPnlPct").textContent = " (" + (totalPct > 0 ? "+" : "") + totalPct.toFixed(1) + "%)";
+  }
+
+  document.getElementById("stockForm").addEventListener("submit", function (evt) {
+    evt.preventDefault();
+    var symbol = document.getElementById("stockSymbol").value.trim().toUpperCase();
+    var qty = parseFloat(document.getElementById("stockQty").value);
+    var buyPrice = parseFloat(document.getElementById("stockBuyPrice").value);
+    var manualPrice = parseFloat(document.getElementById("stockCurrentPrice").value);
+    if (!symbol || !qty || qty <= 0 || !buyPrice || buyPrice <= 0) return;
+    var entry = { id: Date.now(), symbol: symbol, qty: qty, buyPrice: buyPrice };
+    if (manualPrice && manualPrice > 0) entry.manualPrice = manualPrice;
+    var list = loadStocks();
+    list.push(entry);
+    saveStocks(list);
+    document.getElementById("stockSymbol").value = "";
+    document.getElementById("stockQty").value = "";
+    document.getElementById("stockBuyPrice").value = "";
+    document.getElementById("stockCurrentPrice").value = "";
+    renderStocks();
+  });
+
+  // ---- Veri yükleme ----
+  function renderAll() {
+    renderMeta();
+    renderCards();
+    renderPortfolio();
+    renderStocks();
+  }
+
+  function loadData() {
+    return fetch("./data.json?_=" + Date.now(), { cache: "no-store" })
+      .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+      .then(function (json) { DATA = json; renderAll(); })
+      .catch(function (err) {
+        document.getElementById("metaRow").textContent = "Veri yüklenemedi (" + err.message + ")";
+      });
+  }
+
+  document.getElementById("refreshBtn").addEventListener("click", function () {
+    this.classList.add("spinning");
+    var btn = this;
+    loadData().finally(function () { setTimeout(function () { btn.classList.remove("spinning"); }, 400); });
+  });
+
+  populateHoldTypeSelect();
+  loadData();
+  setInterval(loadData, 60 * 1000);
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./sw.js").catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>

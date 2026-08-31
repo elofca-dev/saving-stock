@@ -532,7 +532,7 @@
   </section>
 
   <section id="portfolioSection">
-    <h2 class="section-title">Portföyüm</h2>
+    <h2 class="section-title">Portföyüm Altın</h2>
     <div class="portfolio-summary" id="portfolioSummary" hidden>
       <div class="ps-row">
         <div><div class="ps-label">Maliyet</div><div class="ps-value" id="psCost">—</div></div>
@@ -548,7 +548,7 @@
       <div class="form-grid">
         <div><label class="field-label" for="holdType">Tür</label><select id="holdType"></select></div>
         <div><label class="field-label" for="holdQty" id="holdQtyLabel">Miktar</label><input type="number" id="holdQty" step="any" min="0" placeholder="10" required></div>
-        <div><label class="field-label" for="holdPrice" id="holdPriceLabel">Aldığım fiyat</label><input type="number" id="holdPrice" step="any" min="0" placeholder="6800" required></div>
+        <div><label class="field-label" for="holdPrice" id="holdPriceLabel">Alış fiyatı</label><input type="number" id="holdPrice" step="any" min="0" placeholder="6800" required></div>
       </div>
       <button class="btn-primary" type="submit">Portföye Ekle</button>
     </form>
@@ -616,6 +616,7 @@
 
   var TYPES = [
     { key: "gram", label: "Gram Altın", currency: "TRY", category: "gold" },
+    { key: "gram22", label: "22 Ayar Altın", currency: "TRY", category: "gold" },
     { key: "ceyrek", label: "Çeyrek Altın", currency: "TRY", category: "gold" },
     { key: "yarim", label: "Yarım Altın", currency: "TRY", category: "gold" },
     { key: "tam", label: "Tam Altın", currency: "TRY", category: "gold" },
@@ -626,7 +627,7 @@
   ];
 
   var UNIT_LABEL = {
-    gram: "gram", ceyrek: "adet", yarim: "adet", tam: "adet",
+    gram: "gram", gram22: "gram", ceyrek: "adet", yarim: "adet", tam: "adet",
     cumhuriyet: "adet", ons: "ons", usd: "dolar", eur: "euro"
   };
 
@@ -725,7 +726,7 @@
     if (!t) return;
     var sym = t.currency === "USD" ? "$" : "₺";
     document.getElementById("holdQtyLabel").textContent = "Miktar (" + UNIT_LABEL[t.key] + ")";
-    document.getElementById("holdPriceLabel").textContent = "Aldığım fiyat (" + sym + ")";
+    document.getElementById("holdPriceLabel").textContent = "Alış fiyatı (" + sym + ")";
   }
 
   function pnlClass(pnl) { return pnl > 0.005 ? "up" : (pnl < -0.005 ? "down" : "flat"); }

@@ -1,43 +1,43 @@
 {
-  "updatedAt": "2026-09-01T23:56:09+03:00",
+  "updatedAt": "2026-09-02T00:04:00+03:00",
   "source": "yfinance-approx",
   "prices": {
     "gram": {
-      "buy": 6783.08,
-      "sell": 6796.66
+      "buy": 6784.7,
+      "sell": 6798.28
     },
     "gram22": {
-      "buy": 6213.3,
-      "sell": 6225.74
+      "buy": 6214.79,
+      "sell": 6227.23
     },
     "ceyrek": {
-      "buy": 10981.81,
-      "sell": 11003.8
+      "buy": 10984.43,
+      "sell": 11006.42
     },
     "yarim": {
-      "buy": 21963.62,
-      "sell": 22007.59
+      "buy": 21968.86,
+      "sell": 22012.84
     },
     "tam": {
-      "buy": 43791.58,
-      "sell": 43879.25
+      "buy": 43802.03,
+      "sell": 43889.72
     },
     "cumhuriyet": {
-      "buy": 45216.03,
-      "sell": 45306.55
+      "buy": 45226.82,
+      "sell": 45317.36
     },
     "ons": {
-      "buy": 4370.23,
-      "sell": 4378.97,
+      "buy": 4370.82,
+      "sell": 4379.58,
       "currency": "USD"
     },
     "usd": {
       "buy": 48.23,
-      "sell": 48.32
+      "sell": 48.33
     },
     "eur": {
-      "buy": 55.92,
-      "sell": 56.03
+      "buy": 55.88,
+      "sell": 55.99
     }
   },
   "history": [
@@ -161,6 +161,18 @@
       "ons": 4501.0,
       "usd": 48.29,
       "eur": 56.13
+    },
+    {
+      "t": "2026-09-02T00:04:00+03:00",
+      "gram": 6798.28,
+      "gram22": 6227.23,
+      "ceyrek": 11006.42,
+      "yarim": 22012.84,
+      "tam": 43889.72,
+      "cumhuriyet": 45317.36,
+      "ons": 4379.58,
+      "usd": 48.33,
+      "eur": 55.99
     }
   ],
   "stocks": {
@@ -265,7 +277,7 @@
     "YKBNK": 36.82,
     "ZOREN": 2.31
   },
-  "stocksUpdatedAt": "2026-09-01T23:56:09+03:00",
+  "stocksUpdatedAt": "2026-09-02T00:04:00+03:00",
   "stocksHistory": [
     {
       "t": "2026-08-31T23:43:24+03:00",
@@ -472,6 +484,109 @@
       "VESTL": 22.96,
       "YKBNK": 36.52,
       "ZOREN": 2.32
+    },
+    {
+      "t": "2026-09-02T00:04:00+03:00",
+      "AEFES": 18.08,
+      "AKBNK": 71.95,
+      "AKSA": 10.7,
+      "AKSEN": 78.55,
+      "ALARK": 107.9,
+      "ALTNY": 17.4,
+      "ANSGR": 26.86,
+      "ARCLK": 90.25,
+      "ASELS": 384.5,
+      "ASTOR": 316.75,
+      "BALSU": 9.6,
+      "BERA": 13.58,
+      "BIMAS": 408.25,
+      "BRSAN": 707.0,
+      "BRYAT": 1664.0,
+      "BSOKE": 26.88,
+      "BTCIM": 4.0,
+      "CANTE": 1.3,
+      "CCOLA": 76.75,
+      "CIMSA": 43.8,
+      "CVKMD": 16.16,
+      "CWENE": 34.52,
+      "DAPGM": 7.76,
+      "DOAS": 164.2,
+      "DOHOL": 21.64,
+      "DSTKF": 2190.0,
+      "ECILC": 75.05,
+      "EFOR": 18.18,
+      "EKGYO": 19.75,
+      "ENERY": 10.17,
+      "ENJSA": 110.8,
+      "ENKAI": 88.9,
+      "EREGL": 37.78,
+      "ESEN": 3.55,
+      "EUPWR": 92.35,
+      "EUREN": 3.85,
+      "FENER": 3.09,
+      "FROTO": 77.25,
+      "GARAN": 132.9,
+      "GENIL": 11.62,
+      "GESAN": 82.9,
+      "GLRMK": 165.4,
+      "GRSEL": 300.0,
+      "GRTHO": 205.7,
+      "GSRAY": 1.06,
+      "GUBRF": 471.0,
+      "HALKB": 40.88,
+      "HEKTS": 2.71,
+      "IEYHO": 208.5,
+      "ISCTR": 12.75,
+      "ISMEN": 33.94,
+      "IZENR": 7.12,
+      "KCHOL": 214.7,
+      "KLRHO": 66.0,
+      "KRDMD": 44.4,
+      "KTLEV": 56.55,
+      "KUYAS": 67.1,
+      "MAGEN": 32.98,
+      "MAVI": 37.08,
+      "MGROS": 529.0,
+      "MIATK": 27.44,
+      "MPARK": 413.5,
+      "OBAMS": 5.5,
+      "ODAS": 7.47,
+      "ODINE": 1812.0,
+      "OTKAR": 321.0,
+      "OYAKC": 21.7,
+      "PAHOL": 1.34,
+      "PASEU": 217.1,
+      "PATEK": 19.6,
+      "PETKM": 20.42,
+      "PGSUS": 151.9,
+      "PSGYO": 3.16,
+      "QUAGR": 3.11,
+      "RALYH": 258.5,
+      "REEDR": 5.65,
+      "SAHOL": 93.2,
+      "SARKY": 24.54,
+      "SASA": 2.36,
+      "SISE": 39.56,
+      "SKBNK": 6.32,
+      "SOKM": 56.55,
+      "TAVHL": 260.25,
+      "TCELL": 96.55,
+      "THYAO": 301.5,
+      "TKFEN": 214.3,
+      "TOASO": 268.0,
+      "TRALT": 49.36,
+      "TRENJ": 104.0,
+      "TRMET": 134.7,
+      "TSKB": 10.99,
+      "TTKOM": 51.55,
+      "TUKAS": 2.01,
+      "TUPRS": 402.75,
+      "TURSG": 6.1,
+      "ULKER": 90.3,
+      "VAKBN": 32.56,
+      "VESTL": 22.6,
+      "YKBNK": 36.82,
+      "ZOREN": 2.31
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-10T21:23:26+03:00",
+  "updatedAt": "2026-09-10T21:36:10+03:00",
   "source": "yfinance-approx",
   "prices": {
     "gram": {
@@ -36,8 +36,8 @@
       "sell": 48.54
     },
     "eur": {
-      "buy": 56.4,
-      "sell": 56.51
+      "buy": 56.38,
+      "sell": 56.49
     }
   },
   "history": [
@@ -373,7 +373,7 @@
     "YKBNK": 36.2,
     "ZOREN": 2.52
   },
-  "stocksUpdatedAt": "2026-09-10T21:23:26+03:00",
+  "stocksUpdatedAt": "2026-09-10T21:36:10+03:00",
   "stocksHistory": [
     {
       "t": "2026-08-31T23:43:24+03:00",

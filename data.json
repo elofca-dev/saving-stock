@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-13T12:46:12+03:00",
+  "updatedAt": "2026-09-13T13:08:31+03:00",
   "source": "yfinance-approx",
   "prices": {
     "gram": {
@@ -19,7 +19,7 @@
       "sell": 22308.1
     },
     "tam": {
-      "buy": 44389.55,
+      "buy": 44389.54,
       "sell": 44478.41
     },
     "cumhuriyet": {
@@ -409,7 +409,7 @@
     "YKBNK": 36.7,
     "ZOREN": 2.47
   },
-  "stocksUpdatedAt": "2026-09-13T12:46:12+03:00",
+  "stocksUpdatedAt": "2026-09-13T13:08:31+03:00",
   "stocksHistory": [
     {
       "t": "2026-08-31T23:43:24+03:00",

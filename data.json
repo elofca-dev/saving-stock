@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-26T10:33:01+03:00",
+  "updatedAt": "2026-09-26T10:43:15+03:00",
   "source": "yfinance-approx",
   "prices": {
     "gram": {
@@ -565,7 +565,7 @@
     "YKBNK": 35.78,
     "ZOREN": 2.06
   },
-  "stocksUpdatedAt": "2026-09-26T10:33:01+03:00",
+  "stocksUpdatedAt": "2026-09-26T10:43:15+03:00",
   "stocksHistory": [
     {
       "t": "2026-08-31T23:43:24+03:00",
